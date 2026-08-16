@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ดูแลและแก้ไขตารางราคา</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 p-2 font-sans h-screen flex items-center justify-center overflow-hidden">
+    <div class="w-[97%] max-w-xl bg-white rounded-3xl shadow-xl p-4 sm:p-6 h-[92vh] flex flex-col relative">
+        
+        <!-- ส่วนหัวหลักด้านบนสุด -->
+        <div class="shrink-0 bg-white pb-2 relative z-20">
+            <h2 class="text-xl font-bold text-gray-800 text-center mb-4">ดูแลและแก้ไขตารางราคา</h2>
+            
+            <div class="flex items-center gap-2 mb-2">
+                <!-- Custom Select Button -->
+                <div class="relative w-full">
+                    <button type="button" onclick="toggleCategoryDropdown()" id="categorySelectBtn" class="w-full border border-gray-300 rounded-2xl px-4 py-3 text-xs font-bold text-gray-700 outline-none bg-white flex items-center justify-between shadow-2xs">
+                        <span id="selectedCategoryText" class="truncate">-- แสดงทุกหมวดหมู่ --</span>
+                        <span class="text-gray-400 text-[10px] shrink-0 ml-1">▼</span>
+                    </button>
+                    
+                    <!-- Custom Popup รายการหมวดหมู่ -->
+                    <div id="categoryDropdownPopup" class="hidden absolute left-0 top-full mt-1.5 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 p-2 space-y-1 max-h-60 overflow-y-auto w-max min-w-full">
+                        <!-- รายการจะถูกเรนเดอร์มาใส่ตรงนี้ -->
+                    </div>
+                </div>
+
+                <a href="adminmenu.html" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-2xl text-xs flex items-center justify-center gap-1 shrink-0 shadow-sm">
+                    🔑 กลับผู้ดูแลระบบ
+                </a>
+            </div>
+        </div>
+
+        <hr class="border-gray-100 my-2 shrink-0">
+
+        <!-- ส่วนตารางหลัก -->
+        <div id="tablesContainer" class="space-y-4 flex-1 flex flex-col pr-1 pb-2 overflow-hidden relative z-0">
+            <div class="text-center text-gray-400 text-xs py-4">กำลังโหลดข้อมูล...</div>
+        </div>
+    </div>
+
+    <script src="codekey.js"></script>
+    <script>
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let menus = [];
+        let groups = [];
+        let prices = [];
+        let categoriesList = [];
+        let currentSelectedCategory = 'all';
+
+        function cleanGroupName(name) {
+            if (!name) return '';
+            return name
+                .replace(/ชาวบ้าน\s*\/\s*/g, '')
+                .replace(/สมาชิก\s*VIP\s*\/\s*/g, '')
+                .trim();
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const [ { data: mData }, { data: gData }, { data: pData } ] = await Promise.all([
+                db.from('foods').select('*').order('name', { ascending: true }),
+                db.from('customer_groups').select('*').order('id', { ascending: true }),
+                db.from('food_prices').select('*')
+            ]);
+
+            menus = mData || [];
+            groups = gData || [];
+            prices = pData || [];
+
+            updateCategoriesListFromMenus();
+
+            window.addEventListener('click', (e) => {
+                const btn = document.getElementById('categorySelectBtn');
+                const popup = document.getElementById('categoryDropdownPopup');
+                if (!btn.contains(e.target) && !popup.contains(e.target)) {
+                    popup.classList.add('hidden');
+                }
+            });
+        });
+
+        function updateCategoriesListFromMenus() {
+            const uniqueCategories = [...new Set(menus.map(m => m.category).filter(Boolean))];
+            categoriesList = uniqueCategories.sort();
+
+            renderCategoryDropdownPopup();
+            renderMenuTables();
+
+            if (currentSelectedCategory !== 'all' && !categoriesList.includes(currentSelectedCategory)) {
+                selectCategory('all', '-- แสดงทุกหมวดหมู่ --');
+            }
+        }
+
+        function renderCategoryDropdownPopup() {
+            const popup = document.getElementById('categoryDropdownPopup');
+            
+            let html = `
+                <div onclick="selectCategory('all', '-- แสดงทุกหมวดหมู่ --')" class="px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition hover:bg-gray-100 flex items-center justify-between whitespace-nowrap gap-4 ${currentSelectedCategory === 'all' ? 'bg-red-50 text-red-600' : 'text-gray-700'}">
+                    <span class="truncate">-- แสดงทุกหมวดหมู่ --</span>
+                    ${currentSelectedCategory === 'all' ? '<span class="text-red-600 shrink-0 ml-2">✓</span>' : ''}
+                </div>
+            `;
+
+            categoriesList.forEach(cat => {
+                const isSelected = currentSelectedCategory === cat;
+                html += `
+                    <div onclick="selectCategory('${cat}', '${cat}')" class="px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition hover:bg-gray-100 flex items-center justify-between whitespace-nowrap gap-4 ${isSelected ? 'bg-red-50 text-red-600' : 'text-gray-700'}">
+                        <span class="truncate">📁 ${cat}</span>
+                        ${isSelected ? '<span class="text-red-600 shrink-0 ml-2">✓</span>' : ''}
+                    </div>
+                `;
+            });
+
+            popup.innerHTML = html;
+        }
+
+        function toggleCategoryDropdown() {
+            const popup = document.getElementById('categoryDropdownPopup');
+            popup.classList.toggle('hidden');
+        }
+
+        function selectCategory(value, label) {
+            currentSelectedCategory = value;
+            document.getElementById('selectedCategoryText').textContent = label;
+            document.getElementById('categoryDropdownPopup').classList.add('hidden');
+            renderCategoryDropdownPopup();
+            renderMenuTables();
+        }
+
+        function renderMenuTables() {
+            const container = document.getElementById('tablesContainer');
+            container.innerHTML = '';
+
+            const categories = currentSelectedCategory === 'all' ? categoriesList : [currentSelectedCategory];
+            const targetCategory = categories[0];
+            
+            if (!targetCategory || categoriesList.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-xs py-4">ไม่พบข้อมูลหมวดหมู่หรืออาหาร</div>`;
+                return;
+            }
+
+            const catMenus = menus
+                .filter(m => m.category === targetCategory)
+                .sort((a, b) => a.name.localeCompare(b.name, 'th'));
+
+            if (catMenus.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-xs py-4">ไม่พบข้อมูลอาหารในหมวดหมู่นี้</div>`;
+                return;
+            }
+
+            const groupWidthPercent = groups.length > 0 ? Math.floor(55 / groups.length) : 20;
+
+            let groupHeaders = groups.map(g => `<th class="p-2.5 text-center" style="width: ${groupWidthPercent}%;">${cleanGroupName(g.name)}</th>`).join('');
+
+            let rowsHtml = '';
+            catMenus.forEach((m, index) => {
+                let groupCells = '';
+                groups.forEach(g => {
+                    const priceEntry = prices.find(p => String(p.food_id) === String(m.id) && String(p.customer_group_id) === String(g.id));
+                    const price = priceEntry ? priceEntry.price : 0;
+                    
+                    groupCells += `
+                        <td class="p-2 text-center" style="width: ${groupWidthPercent}%;">
+                            <input type="number" value="${price}" 
+                                   onfocus="this.select()"
+                                   onblur="updatePrice('${m.id}', '${g.id}', this.value)"
+                                   class="w-full max-w-[64px] border border-gray-300 rounded-lg py-1.5 px-1 text-center font-bold text-gray-700 outline-none focus:border-blue-500 text-xs bg-white">
+                        </td>
+                    `;
+                });
+
+                const borderClass = index === catMenus.length - 1 ? 'bg-white' : 'border-b border-gray-200 bg-white';
+
+                rowsHtml += `
+                    <tr class="${borderClass}">
+                        <td class="p-2.5 font-bold text-gray-800 text-left pl-3 truncate" style="width: 45%;">${m.name}</td>
+                        ${groupCells}
+                    </tr>
+                `;
+            });
+
+            let html = `
+                <div class="border-2 border-slate-700 rounded-2xl overflow-hidden shadow-sm bg-white flex-1 flex flex-col h-full">
+                    <div class="bg-slate-700 text-white font-bold py-2.5 px-4 text-xs flex items-center gap-1.5 shrink-0">
+                        <span>📁</span> หมวดหมู่: ${targetCategory}
+                    </div>
+                    <div class="flex-1 overflow-y-auto">
+                        <table class="w-full text-xs border-collapse table-fixed">
+                            <thead class="sticky top-0 z-10">
+                                <tr class="bg-blue-500 text-white font-bold">
+                                    <th class="p-2.5 text-left pl-3" style="width: 45%;">รายการอาหาร</th>
+                                    ${groupHeaders}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        async function updatePrice(foodId, groupId, newPrice) {
+            const parsedPrice = newPrice === '' ? 0 : parseFloat(newPrice);
+            const existing = prices.find(p => String(p.food_id) === String(foodId) && String(p.customer_group_id) === String(groupId));
+
+            if (existing) {
+                const { error } = await db.from('food_prices')
+                    .update({ price: parsedPrice })
+                    .eq('id', existing.id);
+
+                if (!error) {
+                    existing.price = parsedPrice;
+                } else {
+                    console.error('อัปเดตราคาไม่สำเร็จ:', error.message);
+                }
+            } else {
+                const { data, error } = await db.from('food_prices')
+                    .insert({ food_id: foodId, customer_group_id: parseInt(groupId), price: parsedPrice })
+                    .select();
+
+                if (!error && data && data.length > 0) {
+                    prices.push(data[0]);
+                } else {
+                    console.error('บันทึกราคาใหม่ไม่สำเร็จ:', error ? error.message : '');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

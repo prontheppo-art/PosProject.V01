@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Clear Cart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: transparent; margin: 0; padding: 4px; font-family: sans-serif; }
+    </style>
+</head>
+<body>
+
+<div class="bg-white w-full rounded-2xl p-5 shadow-2xl border border-slate-100 text-center">
+    <div class="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+        🗑️
+    </div>
+    <h3 class="font-bold text-slate-800 text-base mb-1">ยืนยันการเคลียร์ตะกร้า?</h3>
+    <p class="text-xs text-slate-500 mb-5 leading-relaxed">
+        คุณต้องการลบรายการอาหารทั้งหมดออกจากตะกร้าใช่หรือไม่?
+    </p>
+    <div class="flex gap-2">
+        <button onclick="window.parent.closeModal('confirmModal')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 px-3 rounded-xl text-xs transition cursor-pointer">
+            ยกเลิก
+        </button>
+        <button onclick="window.parent.executeClearCart()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow transition cursor-pointer">
+            ยืนยันลบ
+        </button>
+    </div>
+</div>
+
+</body>
+</html>

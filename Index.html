@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลาบหนองบัวลำภู @เขื่อนขุนด่านปราการชล</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background: #f4f6f9; }
+        .app-layout { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: 0 auto; background: #fff; box-sizing: border-box; padding: 12px 16px; justify-content: flex-start; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div class="app-layout">
+    <div class="w-full text-center pt-1 pb-3 flex flex-col items-center shrink-0">
+        <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-xl mb-1.5 shadow-inner">🍽️</div>
+        <h1 class="font-extrabold text-sm text-slate-800 mb-0.5">ลาบหนองบัวลำภู @เขื่อนขุนด่านปราการชล</h1>
+        <p class="text-[10px] text-gray-500 font-medium">ระบบจัดการร้านอาหารและสั่งอาหาร</p>
+    </div>
+
+    <div class="w-full space-y-2.5 mt-1">
+        <!-- 1. ปุ่ม หน้าสั่งอาหาร (เชื่อมไปหน้าเลือกกลุ่มลูกค้า) -->
+        <button type="button" onclick="goToPage('Customer_Group.html')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+            <span>📝</span> หน้าสั่งอาหาร
+        </button>
+
+        <!-- 2. ปุ่ม สรุปยอดขาย & ประวัติออร์เดอร์ -->
+        <button type="button" onclick="goToPage('SaleSummary.html')" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+            <span>📊</span> สรุปยอดขาย & ประวัติออร์เดอร์
+        </button>
+
+        <!-- 3. ปุ่ม สต็อกสินค้าคงเหลือ -->
+        <button type="button" onclick="goToPage('StockView.html')" class="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+            <span>📦</span> สต็อกสินค้าคงเหลือ
+        </button>
+
+        <!-- 4. ปุ่ม เข้าสู่ระบบผู้ดูแลระบบ -->
+        <button type="button" onclick="goToPage('AdminMenu.html')" class="w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+            <span>🔒</span> เข้าสู่ระบบผู้ดูแลระบบ (โหมดพัฒนา)
+        </button>
+    </div>
+</div>
+
+<script>
+    function goToPage(url) {
+        window.location.href = url;
+    }
+</script>
+</body>
+</html>

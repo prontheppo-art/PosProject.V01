@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตรวจสอบสต็อกสินค้าคงเหลือ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 p-4 font-sans min-h-screen flex items-start justify-center">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] flex flex-col">
+        
+        <!-- ส่วนหัวด้านบน -->
+        <div class="shrink-0 bg-white pb-2 z-10">
+            <h2 class="text-xl font-bold text-amber-600 text-center mb-1">📦 สต็อกสินค้าคงเหลือ</h2>
+        </div>
+
+        <hr class="border-gray-200 my-2 shrink-0">
+
+        <div class="flex justify-between items-center text-xs font-bold text-gray-700 mb-2 px-1 shrink-0">
+            <span>รายการสินค้า</span>
+            <span>คงเหลือ (หน่วย)</span>
+        </div>
+        
+        <!-- รายการสินค้า -->
+        <div id="stockListContainer" class="space-y-2.5 overflow-y-auto pr-1 flex-1 content-start mb-2">
+            <div class="text-center text-gray-400 text-xs py-4">⏳ กำลังโหลดข้อมูลสต็อก...</div>
+        </div>
+
+        <!-- ส่วนปุ่มควบคุมย้ายมาไว้ด้านล่าง -->
+        <div class="shrink-0 pt-2 border-t border-gray-100 mt-auto">
+            <div class="grid grid-cols-2 gap-2">
+                <a href="index.html" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs text-center transition flex items-center justify-center gap-1 shadow-xs">
+                    🏠 หน้าหลัก
+                </a>
+                <button onclick="loadStockData()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-sm">
+                    🔄 รีเฟรช
+                </button>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- แก้ไข path การเรียกใช้งาน key.js ให้ถูกต้องตามโครงสร้างหลัก -->
+    <script src="root/key.js"></script>
+    <script>
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadStockData();
+        });
+
+        async function loadStockData() {
+            const container = document.getElementById('stockListContainer');
+            container.innerHTML = `<div class="text-center text-gray-400 text-xs py-4">⏳ กำลังรีเฟรชข้อมูล...</div>`;
+
+            try {
+                const { data, error } = await db.from('food_stocks').select('*').order('food_name', { ascending: true });
+                
+                if (error) {
+                    container.innerHTML = `<div class="text-center text-red-400 text-xs py-4">⚠️ ไม่สามารถโหลดข้อมูลได้ (${error.message})</div>`;
+                    return;
+                }
+
+                renderStockList(data || []);
+
+            } catch (err) {
+                container.innerHTML = `<div class="text-center text-red-400 text-xs py-4">❌ เกิดข้อผิดพลาดในการเชื่อมต่อ</div>`;
+            }
+        }
+
+        function renderStockList(items) {
+            const container = document.getElementById('stockListContainer');
+            
+            if (items.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-xs py-4">ไม่พบรายการสินค้าในสต็อก</div>`;
+                return;
+            }
+
+            container.innerHTML = items.map(item => {
+                const name = item.food_name || 'ไม่ระบุชื่อ';
+                const qty = item.quantity !== undefined ? item.quantity : 0;
+                
+                let qtyColor = "text-emerald-700 bg-emerald-50";
+                if (qty <= 0) {
+                    qtyColor = "text-red-700 bg-red-50";
+                } else if (qty < 5) {
+                    qtyColor = "text-amber-700 bg-amber-50";
+                }
+
+                return `
+                    <div class="flex items-center justify-between bg-white border border-gray-200 p-3.5 rounded-2xl shadow-2xs hover:bg-gray-50 transition">
+                        <span class="text-sm font-bold text-gray-800 truncate pr-2">${name}</span>
+                        <span class="text-sm font-extrabold px-3 py-1.5 rounded-xl ${qtyColor} shrink-0">${qty} ชุด/ชิ้น</span>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>

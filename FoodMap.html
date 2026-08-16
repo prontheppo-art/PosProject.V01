@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการสูตรอาหารและวัตถุดิบ (Food Mapping)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="codekey.js"></script>
+</head>
+<body class="bg-gray-100 font-sans p-4 max-w-md mx-auto">
+
+    <!-- แถบเมนูด้านบน -->
+    <div class="flex justify-between items-center mb-4 bg-white p-3 rounded-xl shadow-sm">
+        <a href="adminmenu.html" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
+            🔑 กลับผู้ดูแลระบบ
+        </a>
+        <span class="text-xs font-bold text-gray-600">🔗 จัดการสูตรอาหาร</span>
+        <a href="stockview.html" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
+            📦 ดูสต็อก
+        </a>
+    </div>
+
+    <!-- ฟอร์มและตารางจัดการ -->
+    <div class="bg-white p-4 rounded-2xl shadow-md space-y-4">
+        <h2 class="text-sm font-bold text-gray-800 border-b pb-2">เพิ่ม/ผูกสูตรอาหารกับวัตถุดิบ</h2>
+        
+        <div class="space-y-3">
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">วัตถุดิบ:</label>
+                <select id="stockSelect" class="w-full p-2 border rounded-lg text-xs bg-white">
+                    <option value="">-- เลือกวัตถุดิบ --</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-600 mb-1">เมนูอาหาร:</label>
+                <select id="foodSelect" class="w-full p-2 border rounded-lg text-xs bg-white">
+                    <option value="">-- เลือกเมนูอาหาร --</option>
+                </select>
+            </div>
+            <button onclick="addMapping()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs shadow">
+                + บันทึกการเชื่อมโยงสูตร
+            </button>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-xs font-bold text-gray-700 mb-2">รายการสูตรอาหารทั้งหมดในระบบ</h3>
+            <div id="mappingList" class="space-y-2">
+                <div class="text-center text-xs text-gray-400 py-4">กำลังโหลดข้อมูล...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        window.onload = async function() {
+            await loadDropdowns();
+            await loadMappings();
+        };
+
+        async function loadDropdowns() {
+            try {
+                // โหลดสต็อก
+                const { data: stocks } = await db.from('food_stocks').select('food_name').order('food_name');
+                const stockSelect = document.getElementById('stockSelect');
+                if (stocks) {
+                    stocks.forEach(s => {
+                        let opt = document.createElement('option');
+                        opt.value = s.food_name;
+                        opt.textContent = s.food_name;
+                        stockSelect.appendChild(opt);
+                    });
+                }
+
+                // โหลดเมนูอาหาร (เก็บ id เป็น value แต่แสดง name)
+                const { data: foods } = await db.from('foods').select('id, name').order('name');
+                const foodSelect = document.getElementById('foodSelect');
+                if (foods) {
+                    foods.forEach(f => {
+                        let opt = document.createElement('option');
+                        opt.value = f.id;
+                        opt.textContent = f.name;
+                        foodSelect.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadMappings() {
+            const listDiv = document.getElementById('mappingList');
+            try {
+                // ดึงข้อมูล mapping พร้อม JOIN ดึงชื่อเมนูจากตาราง foods
+                const { data, error } = await db
+                    .from('food_mappings')
+                    .select(`
+                        id,
+                        stock_name,
+                        food_id,
+                        foods ( name )
+                    `)
+                    .order('id', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    listDiv.innerHTML = '<div class="text-center text-xs text-gray-400 py-3">ยังไม่มีข้อมูลการผูกสูตร</div>';
+                    return;
+                }
+
+                let html = `<table class="w-full text-xs text-left border-collapse">
+                    <tr class="bg-gray-100 text-gray-600 border-b">
+                        <th class="p-2">รหัส</th>
+                        <th class="p-2">เมนูอาหาร</th>
+                        <th class="p-2">วัตถุดิบ</th>
+                        <th class="p-2 text-center">จัดการ</th>
+                    </tr>`;
+
+                data.forEach(m => {
+                    const foodName = m.foods ? m.foods.name : '<span class="text-red-400">(เมนูถูกลบ)</span>';
+
+                    html += `<tr class="border-b hover:bg-gray-50">
+                        <td class="p-2 text-gray-500">#${m.id}</td>
+                        <td class="p-2 font-bold text-gray-800">${foodName}</td>
+                        <td class="p-2 text-blue-600">${m.stock_name}</td>
+                        <td class="p-2 text-center">
+                            <button onclick="deleteMapping(${m.id})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">ลบ</button>
+                        </td>
+                    </tr>`;
+                });
+                html += `</table>`;
+                listDiv.innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                listDiv.innerHTML = '<div class="text-center text-xs text-red-500 py-3">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+            }
+        }
+
+        async function addMapping() {
+            const stockName = document.getElementById('stockSelect').value;
+            const foodId = document.getElementById('foodSelect').value;
+
+            if (!stockName || !foodId) {
+                alert('กรุณาเลือกวัตถุดิบและเมนูอาหารให้ครบถ้วน');
+                return;
+            }
+
+            try {
+                const { error } = await db.from('food_mappings').insert([{ stock_name: stockName, food_id: foodId }]);
+                if (error) throw error;
+
+                alert('✅ บันทึกการเชื่อมโยงสูตรสำเร็จ');
+                document.getElementById('stockSelect').value = '';
+                document.getElementById('foodSelect').value = '';
+                loadMappings();
+            } catch (err) {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        }
+
+        async function deleteMapping(id) {
+            if (!confirm('ต้องการลบการเชื่อมโยงนี้ใช่หรือไม่?')) return;
+            try {
+                const { error } = await db.from('food_mappings').delete().eq('id', id);
+                if (error) throw error;
+                loadMappings();
+            } catch (err) {
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

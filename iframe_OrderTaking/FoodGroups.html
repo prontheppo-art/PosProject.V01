@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เลือกหมวดหมู่อาหาร</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: sans-serif; background: #fff; margin: 0; padding: 4px; }
+        .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        
+        /* สีกดไล่ระดับหลากหลาย สดใส สลับกันสวยงาม */
+        .category-card { color: white; padding: 12px 10px; border-radius: 14px; text-align: center; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.1s, filter 0.1s; display: flex; align-items: center; justify-content: center; min-height: 50px; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .category-card:active { transform: scale(0.96); filter: brightness(0.9); }
+
+        /* ชุดสีไล่เฉดไม่ซ้ำกัน */
+        .category-card:nth-child(6n+1) { background: linear-gradient(135deg, #FF6B6B, #FF8E53); } /* ส้ม-แดง */
+        .category-card:nth-child(6n+2) { background: linear-gradient(135deg, #4E65FF, #92EFFD); } /* น้ำเงิน-ฟ้า */
+        .category-card:nth-child(6n+3) { background: linear-gradient(135deg, #11998e, #38ef7d); } /* เขียวมรกต */
+        .category-card:nth-child(6n+4) { background: linear-gradient(135deg, #F2994A, #F2C94C); } /* ส้มเหลืองทอง */
+        .category-card:nth-child(6n+5) { background: linear-gradient(135deg, #8A2387, #E94057); } /* ม่วง-ชมพู */
+        .category-card:nth-child(6n+6) { background: linear-gradient(135deg, #007991, #78ffd6); } /* ฟ้าเขียวมุก */
+    </style>
+</head>
+<body>
+
+    <div class="category-grid" id="categoryGridContainer">
+        <div class="text-center col-span-2 text-gray-400 py-6 text-xs font-bold">⏳ กำลังโหลดหมวดหมู่อาหาร...</div>
+    </div>
+
+    <!-- เชื่อมต่อ key.js จากโฟลเดอร์ root ตามโครงสร้างโปรเจกต์ -->
+    <script src="../root/key.js"></script>
+    <script>
+        const supabaseUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '';
+        const supabaseKey = typeof SUPABASE_KEY !== 'undefined' ? SUPABASE_KEY : '';
+        const db = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        window.onload = async function() {
+            try {
+                // ดึงข้อมูลจากตาราง foods ใน Supabase
+                const { data: foods, error } = await db.from('foods').select('*');
+                if (error) throw error;
+                
+                const container = document.getElementById('categoryGridContainer');
+                
+                if (!foods || foods.length === 0) {
+                    container.innerHTML = `<div class="text-center col-span-2 text-gray-400 py-6 text-xs font-bold">ไม่พบข้อมูลอาหารในระบบ</div>`;
+                    return;
+                }
+
+                // ดึงรายการหมวดหมู่ที่ไม่ซ้ำกันจากฟิลด์ category
+                const categories = [...new Set(foods.map(f => f.category || 'อื่นๆ'))].sort();
+                
+                container.innerHTML = '';
+                categories.forEach(cat => {
+                    const card = document.createElement('div');
+                    card.className = 'category-card';
+                    card.textContent = `📁 ${cat}`;
+                    card.onclick = () => {
+                        // ส่งค่าหมวดหมู่ไปที่หน้าหลัก (OrderTaking.html) เพื่อเปิด Modal แสดงรายชื่อเมนู
+                        if (window.parent && typeof window.parent.openCategoryModalFromSubfile === 'function') {
+                            window.parent.openCategoryModalFromSubfile(cat);
+                        } else {
+                            console.error("ไม่พบฟังก์ชันเปิด Modal ในหน้าหลัก");
+                        }
+                    };
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Error loading categories:", err);
+                document.getElementById('categoryGridContainer').innerHTML = `<div class="text-center col-span-2 text-red-500 py-6 text-xs font-bold">❌ โหลดหมวดหมู่ไม่สำเร็จ</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

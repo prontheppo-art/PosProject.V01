@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ใบเสร็จรับเงิน / ใบสรุปออร์เดอร์</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- เพิ่ม script สำหรับสร้าง QR Code พร้อมเพย์ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; font-family: sans-serif; background: #f4f6f9; display: flex; justify-content: center; align-items: center; }
+        .bill-container { width: 100%; max-width: 420px; background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; max-height: 95vh; overflow-y: auto; }
+        
+        @media print {
+            body { background: #fff; display: block; }
+            .bill-container { box-shadow: none; max-width: 100%; max-height: none; padding: 0; }
+            button { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bill-container">
+        <div class="text-center mb-4">
+            <h2 class="font-bold text-base text-slate-800">ลาบหนองบัวลำภู</h2>
+            <div class="text-xs text-slate-500">โทร. 064-5654951</div>
+            <div class="font-bold text-sm text-slate-700 mt-2">ใบสรุปออร์เดอร์</div>
+            <div id="orderDateTime" class="text-xs text-slate-400">-</div>
+        </div>
+
+        <div class="border-b border-dashed my-2"></div>
+
+        <div id="billItemList" class="space-y-2 my-2 text-xs flex-grow overflow-y-auto max-h-[220px]">
+            <!-- รายการอาหารจะถูกเรนเดอร์ตรงนี้ -->
+        </div>
+
+        <div class="border-b border-dashed my-2"></div>
+
+        <div class="flex justify-between items-center text-xs font-bold text-slate-700 my-1">
+            <span id="billSummaryCount">0 รายการ | 0 ชิ้น</span>
+            <span id="billTotalPrice" class="text-emerald-700 text-sm">0 บาท</span>
+        </div>
+
+        <div class="border-b border-dashed my-2"></div>
+
+        <div class="text-center text-[11px] text-slate-600 my-3">
+            <div>ชื่อบัญชี: นางสาวทัศวรรณ</div>
+            <div>ธนาคารกรุงไทย: XXX-X-XXXXX-X</div>
+            <div>พร้อมเพย์: 0645654951</div>
+        </div>
+
+        <!-- พื้นที่แสดง QR Code พร้อมเพย์ -->
+        <div class="flex justify-center my-2">
+            <div id="qrcode" class="p-2 bg-white border rounded shadow-sm flex items-center justify-center"></div>
+        </div>
+
+        <div class="text-center text-xs text-slate-500 my-2">ขอบคุณค่ะ</div>
+
+        <button onclick="finishOrder()" class="mt-3 bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-xl text-xs w-full shadow cursor-pointer transition">
+            🖨️ พิมพ์ใบเสร็จ & จบออร์เดอร์
+        </button>
+    </div>
+
+    <script>
+        window.onload = function() {
+            loadBillData();
+        };
+
+        function loadBillData() {
+            let cart = JSON.parse(localStorage.getItem('lastCompletedOrder') || '[]');
+            if (cart.length === 0) {
+                cart = JSON.parse(localStorage.getItem('restaurantCart') || '[]');
+            }
+
+            const container = document.getElementById('billItemList');
+            container.innerHTML = '';
+
+            if (cart.length === 0) {
+                container.innerHTML = `<div class="text-center text-slate-400 py-4">ไม่มีรายการอาหารในตะกร้า</div>`;
+                document.getElementById('billSummaryCount').textContent = '0 รายการ | 0 ชิ้น';
+                document.getElementById('billTotalPrice').textContent = '0 บาท';
+                generateQRCode(0);
+                return;
+            }
+
+            let totalQty = 0;
+            let totalPrice = 0;
+
+            cart.forEach(item => {
+                totalQty += Number(item.qty);
+                let itemTotal = Number(item.price) * Number(item.qty);
+                totalPrice += itemTotal;
+
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <span class="font-medium text-slate-800">${item.name} x${item.qty}</span>
+                        ${item.note ? `<div class="text-[10px] text-rose-500 font-semibold">หมายเหตุ: ${item.note}</div>` : ''}
+                    </div>
+                    <span class="font-bold text-slate-700">${itemTotal} ฿</span>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('billSummaryCount').textContent = `${cart.length} รายการ | ${totalQty} ชิ้น`;
+            document.getElementById('billTotalPrice').textContent = `${totalPrice.toLocaleString()} บาท`;
+
+            const orderDate = localStorage.getItem('orderRecordDate') || new Date().toLocaleDateString('th-TH');
+            const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('orderDateTime').textContent = `${orderDate} ${nowTime}`;
+
+            // สร้าง QR Code ตามยอดเงินรวมจริง
+            generateQRCode(totalPrice);
+        }
+
+        // ฟังก์ชันสร้าง QR Code พร้อมเพย์ (ใช้ API ภายนอกสำหรับสร้างสลิป QR พร้อมยอดเงิน)
+        function generateQRCode(amount) {
+            const qrcodeContainer = document.getElementById('qrcode');
+            qrcodeContainer.innerHTML = '';
+            
+            // เบอร์โทรพร้อมเพย์ 0645654951
+            const payload = `https://promptpay.io/0645654951/${amount}.png`;
+            
+            const img = document.createElement('img');
+            img.src = payload;
+            img.alt = 'QR Code PromptPay';
+            img.className = 'w-32 h-32 object-contain';
+            
+            img.onerror = function() {
+                qrcodeContainer.innerHTML = '<span class="text-[10px] text-red-500">ไม่สามารถโหลด QR Code ได้</span>';
+            };
+            
+            qrcodeContainer.appendChild(img);
+        }
+
+        function finishOrder() {
+            // สั่งเปิดหน้าต่างพิมพ์ (สามารถกด Save as PDF ได้)
+            window.print();
+
+            // ล้างข้อมูลทั้งหมดเมื่อพิมพ์เสร็จ
+            localStorage.removeItem('lastCompletedOrder');
+            localStorage.removeItem('restaurantCart');
+            localStorage.removeItem('customerPhone');
+            localStorage.removeItem('customerLocation');
+            localStorage.removeItem('customerZone');
+            localStorage.removeItem('selectedCustomerGroup');
+            
+            // กลับไปที่หน้า Index.html อัตโนมัติหลังพิมพ์
+            setTimeout(() => {
+                window.location.href = 'Index.html';
+            }, 500);
+        }
+    </script>
+</body>
+</html>

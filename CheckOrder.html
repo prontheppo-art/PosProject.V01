@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สรุปรายการสั่งอาหาร - ยืนยันและตัดสต็อก</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="root/key.js"></script>
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; font-family: sans-serif; background: #f4f6f9; }
+        .app-layout { display: flex; flex-direction: column; min-height: 100vh; max-width: 500px; margin: 0 auto; background: #fff; box-sizing: border-box; }
+        .header-section { padding: 12px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .content-section { padding: 12px; flex-grow: 1; overflow-y: auto; }
+        .footer-section { padding: 12px; background: #fff; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="app-layout">
+    <div class="header-section">
+        <h1 class="font-bold text-base text-slate-800">📋 สรุปรายการสั่งอาหาร</h1>
+        <!-- แก้ไขลิงก์ปุ่ม "สั่งเพิ่ม" ให้กลับไปที่ OrderMenu.html -->
+        <a href="OrderMenu.html" class="bg-slate-500 text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-slate-600">⬅️ สั่งเพิ่ม</a>
+    </div>
+
+    <div class="content-section">
+        <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg mb-4 text-xs font-semibold text-amber-800 flex justify-between">
+            <span>กลุ่มลูกค้า: <span id="lblGroup" class="text-slate-900">-</span></span>
+            <span>วันที่สั่ง: <span id="lblDate" class="text-slate-900">-</span></span>
+        </div>
+
+        <div id="deliveryInfoBox" class="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4 text-xs text-blue-900 hidden">
+            <div class="font-bold mb-1">📍 ข้อมูลจัดส่ง:</div>
+            <div>เบอร์โทร: <span id="lblPhone">-</span></div>
+            <div>สถานที่: <span id="lblLocation">-</span> | โซน: <span id="lblZone">-</span></div>
+        </div>
+
+        <div class="border rounded-lg overflow-hidden mb-4">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-700 border-b">
+                        <th class="p-2.5">รายการอาหาร</th>
+                        <th class="p-2.5 text-center">จำนวน</th>
+                        <th class="p-2.5 text-right">รวม (บาท)</th>
+                        <th class="p-2.5 text-center">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="cartTableBody">
+                    <!-- รายการสินค้าในตะกร้า -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg flex justify-between items-center text-sm font-bold text-emerald-900">
+            <span id="summaryCountText">0 รายการ | 0 ชิ้น</span>
+            <span>ราคารวมทั้งหมด: <span id="summaryTotalPrice" class="text-base text-emerald-700">0</span> บาท</span>
+        </div>
+    </div>
+
+    <div class="footer-section">
+        <!-- เอาปุ่มเคลียร์สีแดงออกแล้ว เหลือเฉพาะปุ่มยืนยันการส่งออร์เดอร์สีเขียวแบบเต็มความกว้าง -->
+        <button onclick="confirmOrderAndCutStock()" class="bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg text-sm w-full hover:bg-emerald-700 shadow transition">✅ ยืนยันการส่งออร์เดอร์</button>
+    </div>
+</div>
+
+<script>
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let cart = [];
+
+    window.onload = function() {
+        loadCartData();
+    };
+
+    function loadCartData() {
+        cart = JSON.parse(localStorage.getItem('restaurantCart') || '[]');
+        const group = localStorage.getItem('selectedCustomerGroup') || 'ทั่วไป';
+        const orderDate = localStorage.getItem('orderRecordDate') || new Date().toISOString().split('T')[0];
+
+        document.getElementById('lblGroup').textContent = group;
+        document.getElementById('lblDate').textContent = orderDate;
+
+        const phone = localStorage.getItem('customerPhone');
+        const location = localStorage.getItem('customerLocation');
+        const zone = localStorage.getItem('customerZone');
+
+        if (group.includes('นักท่องเที่ยว') || phone || location) {
+            document.getElementById('deliveryInfoBox').classList.remove('hidden');
+            document.getElementById('lblPhone').textContent = phone || '-';
+            document.getElementById('lblLocation').textContent = location || '-';
+            document.getElementById('lblZone').textContent = zone || '-';
+        }
+
+        renderTable();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('cartTableBody');
+        tbody.innerHTML = '';
+
+        if (cart.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-slate-400">ยังไม่มีรายการอาหารในตะกร้า</td></tr>`;
+            document.getElementById('summaryCountText').textContent = '0 รายการ | 0 ชิ้น';
+            document.getElementById('summaryTotalPrice').textContent = '0';
+            return;
+        }
+
+        let totalQty = 0;
+        let totalPrice = 0;
+
+        cart.forEach((item, index) => {
+            totalQty += Number(item.qty);
+            totalPrice += Number(item.price) * Number(item.qty);
+
+            const tr = document.createElement('tr');
+            tr.className = 'border-b hover:bg-slate-50';
+            tr.innerHTML = `
+                <td class="p-2.5 font-medium text-slate-800">
+                    ${item.name}
+                    ${item.note ? `<div class="text-[10px] text-rose-500 font-semibold">หมายเหตุ: ${item.note}</div>` : ''}
+                </td>
+                <td class="p-2.5 text-center font-bold text-slate-700">${item.qty}</td>
+                <td class="p-2.5 text-right font-bold text-blue-600">${item.price * item.qty}.-</td>
+                <td class="p-2.5 text-center">
+                    <button onclick="removeItem(${index})" class="text-rose-500 font-bold hover:text-rose-700">✕</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('summaryCountText').textContent = `${cart.length} รายการ | ${totalQty} ชิ้น`;
+        document.getElementById('summaryTotalPrice').textContent = totalPrice.toLocaleString();
+    }
+
+    function removeItem(index) {
+        cart.splice(index, 1);
+        localStorage.setItem('restaurantCart', JSON.stringify(cart));
+        renderTable();
+    }
+
+    async function confirmOrderAndCutStock() {
+        if (cart.length === 0) {
+            alert('⚠️ กรุณาเลือกรายการอาหารก่อนยืนยันออร์เดอร์');
+            return;
+        }
+
+        try {
+            for (let item of cart) {
+                let { data: mappings, error: mapError } = await db
+                    .from('food_mappings')
+                    .select('*')
+                    .eq('food_id', item.id);
+
+                if (mapError) throw new Error(mapError.message);
+
+                if (mappings && mappings.length > 0) {
+                    for (let map of mappings) {
+                        let stockName = map.stock_name || map.food_name;
+                        let { data: stock, error: stockError } = await db
+                            .from('food_stocks')
+                            .select('*')
+                            .eq('food_name', stockName)
+                            .single();
+
+                        if (stockError) continue;
+
+                        if (stock && stock.quantity < item.qty) {
+                            alert(`❌ วัตถุดิบไม่พอ! วัตถุดิบ "${stockName}" เหลือ ${stock.quantity} แต่ต้องการ ${item.qty}`);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            let totalAmount = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            let totalQtyCount = cart.reduce((sum, i) => sum + i.qty, 0);
+            let group = localStorage.getItem('selectedCustomerGroup') || 'ทั่วไป';
+            let orderDate = localStorage.getItem('orderRecordDate') || new Date().toISOString().split('T')[0];
+
+            let orderPayload = {
+                customer_group: group,
+                total_price: totalAmount,
+                total_qty: totalQtyCount,
+                items: cart,
+                location_name: localStorage.getItem('customerLocation') || '-',
+                zone_name: localStorage.getItem('customerZone') || '-',
+                phone: localStorage.getItem('customerPhone') || '-',
+                order_date: orderDate
+            };
+
+            let { error: orderError } = await db.from('orders').insert([orderPayload]);
+            if (orderError) throw new Error(orderError.message);
+
+            for (let item of cart) {
+                let { data: mappings } = await db
+                    .from('food_mappings')
+                    .select('*')
+                    .eq('food_id', item.id);
+
+                if (mappings && mappings.length > 0) {
+                    for (let map of mappings) {
+                        let stockName = map.stock_name || map.food_name;
+                        let { data: stock } = await db
+                            .from('food_stocks')
+                            .select('id, quantity')
+                            .eq('food_name', stockName)
+                            .single();
+
+                        if (stock) {
+                            let newQuantity = Number(stock.quantity) - Number(item.qty);
+                            await db
+                                .from('food_stocks')
+                                .update({ quantity: newQuantity, updated_at: new Date().toISOString() })
+                                .eq('id', stock.id);
+                        }
+                    }
+                }
+            }
+            
+            localStorage.setItem('lastCompletedOrder', JSON.stringify(cart));
+            localStorage.removeItem('restaurantCart');
+            
+            // ลิงก์ไปที่หน้า bill.html หลังจากยืนยันสำเร็จ
+            window.location.href = 'bill.html';
+
+        } catch (err) {
+            console.error('Order Error:', err);
+            alert(`เกิดข้อผิดพลาด: ${err.message}`);
+        }
+    }
+</script>
+</body>
+</html>

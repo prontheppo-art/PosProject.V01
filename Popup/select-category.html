@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เลือกหมวดหมู่อาหาร</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: sans-serif; background: #fff; margin: 0; padding: 2px; }
+        .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .category-card { background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 10px 8px; border-radius: 10px; text-align: center; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.12); transition: transform 0.1s; }
+        .category-card:active { transform: scale(0.97); }
+        .category-card:nth-child(2) { background: linear-gradient(135deg, #e67e22, #d35400); }
+        .category-card:nth-child(3) { background: linear-gradient(135deg, #27ae60, #219653); }
+        .category-card:nth-child(4) { background: linear-gradient(135deg, #8e44ad, #732d91); }
+        .category-card:nth-child(n+5) { background: linear-gradient(135deg, #16a085, #1abc9c); }
+    </style>
+</head>
+<body>
+
+    <div class="category-grid" id="categoryGridContainer">
+        <div class="text-center col-span-2 text-gray-500 py-4 text-xs">⏳ กำลังโหลดหมวดหมู่...</div>
+    </div>
+
+    <!-- เชื่อมต่อ key.js ถอยกลับไป 1 โฟลเดอร์เพราะอยู่ in popup/ -->
+    <script src="../root/key.js"></script>
+    <script>
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        window.onload = async function() {
+            try {
+                const { data: foods, error } = await db.from('foods').select('*');
+                if (error) throw error;
+                
+                const container = document.getElementById('categoryGridContainer');
+                const categories = [...new Set(foods.map(f => f.category || 'อื่นๆ'))].sort();
+                
+                container.innerHTML = '';
+                if (categories.length === 0) {
+                    container.innerHTML = `<div class="text-center col-span-2 text-gray-500 py-4 text-xs">ไม่พบหมวดหมู่อาหาร</div>`;
+                    return;
+                }
+
+                categories.forEach(cat => {
+                    const card = document.createElement('div');
+                    card.className = 'category-card';
+                    card.textContent = `📁 ${cat}`;
+                    card.onclick = () => {
+                        // สั่งส่งค่าหมวดหมู่ไปเปิด Modal รายการอาหารที่หน้าหลัก (parent)
+                        if (window.parent && typeof window.parent.openCategoryModalFromSubfile === 'function') {
+                            window.parent.openCategoryModalFromSubfile(cat);
+                        }
+                    };
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Error loading categories:", err);
+                document.getElementById('categoryGridContainer').innerHTML = `<div class="text-center col-span-2 text-red-500 py-4 text-xs">❌ โหลดหมวดหมู่ไม่สำเร็จ</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

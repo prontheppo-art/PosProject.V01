@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ผู้ดูแลระบบ - ลาบหนองบัวลำภู</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .main-card {
+            background: #ffffff;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 24px;
+            padding: 30px 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .icon-top {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+
+        .store-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .store-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 28px;
+        }
+
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .menu-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            transition: transform 0.1s ease;
+            box-sizing: border-box;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-food { background: #2563eb; }
+        .btn-price { background: #d97706; }
+        .btn-stock-init { background: #ea580c; }
+        .btn-mapping { background: #0d9488; }
+        .btn-password { background: #334155; }
+        .btn-home { background: #ef4444; }
+    </style>
+</head>
+<body>
+
+    <div class="main-card">
+        <div class="icon-top">🔓</div>
+        <div class="store-title">ผู้ดูแลระบบ</div>
+        <div class="store-subtitle">จัดการระบบร้านอาหารและตรวจสอบยอดขาย</div>
+
+        <div class="menu-list">
+            <!-- ปุ่มที่ 1 -->
+            <a href="addmenu.html" class="menu-btn btn-food">
+                <span>🍲 จัดการเมนูอาหาร & หมวดหมู่</span>
+            </a>
+            <!-- ปุ่มที่ 2 -->
+            <a href="editmenu.html" class="menu-btn btn-price">
+                <span>📋 ดูแลและแก้ไขตารางราคา</span>
+            </a>
+            <!-- ปุ่มที่ 3 -->
+            <a href="stockmanage.html" class="menu-btn btn-stock-init">
+                <span>📦 จัดการสต็อกสินค้าตั้งต้น</span>
+            </a>
+            <!-- ปุ่มที่ 4: จัดการสูตรอาหาร & วัตถุดิบ (เพิ่มใหม่) -->
+            <a href="foodmapping.html" class="menu-btn btn-mapping">
+                <span>🔗 จัดการสูตรอาหาร & วัตถุดิบ</span>
+            </a>
+            <!-- ปุ่มที่ 5 (เปลี่ยนรหัสผ่านแอดมิน) -->
+            <a href="changepwd.html" class="menu-btn btn-password">
+                <span>🔑 เปลี่ยนรหัสผ่านแอดมิน</span>
+            </a>
+            <!-- ปุ่มที่ 6 (กลับหน้าหลัก) -->
+            <a href="index.html" class="menu-btn btn-home">
+                <span>🏠 กลับหน้าหลัก</span>
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

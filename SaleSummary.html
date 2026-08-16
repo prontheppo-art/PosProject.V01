@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สรุปยอดขาย</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .cal-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+        .cal-modal.active { opacity: 1; pointer-events: auto; }
+        .cal-box { background: white; width: 90%; max-width: 320px; border-radius: 24px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transform: scale(0.95); transition: transform 0.2s ease; }
+        .cal-modal.active .cal-box { transform: scale(1); }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+        .cal-day-header { font-size: 11px; font-weight: bold; color: #94a3b8; padding-bottom: 8px; }
+        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; color: #334155; border-radius: 50%; cursor: pointer; transition: background 0.1s; }
+        .cal-day:hover { background: #f1f5f9; }
+        .cal-day.selected { background: #2563eb; color: white; }
+        .cal-day.today { border: 2px solid #2563eb; color: #2563eb; }
+        .cal-day.today.selected { background: #2563eb; color: white; border: none; }
+        .cal-day.empty { pointer-events: none; }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 font-sans h-screen overflow-hidden flex justify-center items-center">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 flex flex-col h-[92vh] box-border">
+        
+        <div class="flex-none bg-white z-10 pb-2">
+            <div class="text-center mb-3 pt-1">
+                <h2 class="text-lg font-bold text-gray-800">สรุปยอดขาย</h2>
+                <p class="text-[11px] text-gray-400 mt-0.5">รายการสั่งอาหารและจัดการออร์เดอร์</p>
+            </div>
+
+            <div class="bg-gray-100 p-1 rounded-2xl grid grid-cols-4 gap-1">
+                <button onclick="filterOrders('today', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn">วันนี้</button>
+                <button onclick="filterOrders('week', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn">สัปดาห์นี้</button>
+                <button onclick="filterOrders('month', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn">เดือนนี้</button>
+                
+                <button onclick="openCustomCalendar()" id="dateFilterBtn" class="py-1.5 text-[11px] font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn bg-transparent flex items-center justify-center truncate px-1">
+                    <span id="dateButtonText">📅 เลือกวัน</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="orderHistoryList" class="flex-1 overflow-y-auto space-y-1.5 pr-1 mt-1">
+            <div class="text-center text-gray-400 text-xs py-10">⏳ กำลังโหลดข้อมูลประวัติ...</div>
+        </div>
+
+        <div class="flex-none pt-2 bg-white z-10 border-t border-gray-100 mt-2">
+            <div class="flex items-center gap-2">
+                <div class="flex-1 bg-slate-800 text-white rounded-2xl px-3.5 py-2.5 flex justify-between items-center shadow-md">
+                    <div>
+                        <div id="summaryLabel" class="text-[10px] text-slate-300 font-bold">ยอดรวมทั้งหมด</div>
+                        <div class="text-[8px] text-slate-400">จากออร์เดอร์ที่แสดง</div>
+                    </div>
+                    <div class="text-right">
+                        <span id="summaryTotalAmount" class="text-sm font-extrabold text-emerald-400">0 ฿</span>
+                    </div>
+                </div>
+
+                <a href="index.html" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-3 rounded-2xl text-xs text-center transition flex items-center justify-center gap-1 shadow-sm shrink-0">
+                    🏠 หน้าหลัก
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ปฏิทินเลือกวัน -->
+    <div id="customCalendarModal" class="cal-modal">
+        <div class="cal-box">
+            <div class="flex justify-between items-center mb-3">
+                <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 flex items-center justify-center">‹</button>
+                <h3 id="calMonthYear" class="font-bold text-sm text-gray-800">สิงหาคม 2026</h3>
+                <button onclick="changeMonth(1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 flex items-center justify-center">›</button>
+            </div>
+            
+            <div class="cal-grid mb-2">
+                <div class="cal-day-header">อา</div>
+                <div class="cal-day-header">จ</div>
+                <div class="cal-day-header">อ</div>
+                <div class="cal-day-header">พ</div>
+                <div class="cal-day-header">พฤ</div>
+                <div class="cal-day-header">ศ</div>
+                <div class="cal-day-header">ส</div>
+            </div>
+            
+            <div id="calDaysContainer" class="cal-grid mb-4"></div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="selectToday()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold py-2.5 rounded-xl text-xs transition">📅 วันนี้</button>
+                <button onclick="closeCustomCalendar()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ป๊อปอัพรายละเอียดออร์เดอร์ -->
+    <div id="detailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white w-[90%] max-w-[340px] rounded-2xl p-5 shadow-2xl transform scale-95 transition-transform duration-200" id="detailBox">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-3">
+                <h3 class="text-sm font-bold text-gray-800">📋 รายละเอียดออร์เดอร์</h3>
+                <button onclick="closeDetailModal()" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-xs cursor-pointer">✕</button>
+            </div>
+            <div id="detailContent" class="space-y-1.5 max-h-60 overflow-y-auto text-xs text-gray-600 mb-4 pr-1"></div>
+            <button onclick="closeDetailModal()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer shadow-sm">ปิดหน้าต่าง</button>
+        </div>
+    </div>
+
+    <script src="root/key.js"></script>
+    <script>
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let allOrders = [];
+        let viewDate = new Date();
+        let selectedDateStr = "";
+
+        function cleanGroupName(name) {
+            if (!name) return 'ทั่วไป';
+            return name
+                .replace(/ชาวบ้าน\s*\/\s*/g, '')
+                .replace(/สมาชิก\s*VIP\s*\/\s*/g, '')
+                .trim();
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await fetchOrdersFromDatabase();
+        });
+
+        async function fetchOrdersFromDatabase() {
+            const container = document.getElementById('orderHistoryList');
+            try {
+                const { data, error } = await db.from('orders').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+                
+                allOrders = data || [];
+                renderOrderHistory(allOrders);
+                document.getElementById('summaryLabel').textContent = "ยอดรวมทั้งหมด";
+            } catch (err) {
+                console.error('Error fetching orders:', err);
+                container.innerHTML = `<div class="text-center text-red-400 text-xs py-10">ไม่สามารถโหลดข้อมูลออร์เดอร์ได้ (${err.message})</div>`;
+            }
+        }
+
+        function getOrderTotalAmount(order) {
+            if (order.total_amount && Number(order.total_amount) > 0) return Number(order.total_amount);
+            if (order.total_price && Number(order.total_price) > 0) return Number(order.total_price);
+            if (order.total && Number(order.total) > 0) return Number(order.total);
+
+            let items = order.items;
+            if (typeof items === 'string') {
+                try { items = JSON.parse(items); } catch(e) { items = []; }
+            }
+            if (items && !Array.isArray(items) && typeof items === 'object') {
+                items = [items];
+            }
+            if (!Array.isArray(items)) return 0;
+
+            return items.reduce((sum, i) => {
+                const price = parseFloat(i.price || i.unit_price || i.p || 0);
+                const qty = parseFloat(i.qty || i.quantity || 1);
+                return sum + (price * qty);
+            }, 0);
+        }
+
+        function filterOrders(type, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('bg-white', 'shadow-xs', 'text-gray-800');
+                b.classList.add('text-gray-500');
+            });
+            if (btn) {
+                btn.classList.add('bg-white', 'shadow-xs', 'text-gray-800');
+                btn.classList.remove('text-gray-500');
+            }
+
+            document.getElementById('dateButtonText').textContent = "📅 เลือกวัน";
+            selectedDateStr = "";
+
+            const now = new Date();
+            let filtered = allOrders;
+            let labelText = "ยอดรวมทั้งหมด";
+
+            if (type === 'today') {
+                filtered = allOrders.filter(o => new Date(o.created_at).toDateString() === now.toDateString());
+                labelText = "ยอดรวมวันนี้";
+            } else if (type === 'week') {
+                filtered = allOrders.filter(o => {
+                    const diffDays = (now - new Date(o.created_at)) / (1000 * 60 * 60 * 24);
+                    return diffDays <= 7;
+                });
+                labelText = "ยอดรวมสัปดาห์นี้";
+            } else if (type === 'month') {
+                filtered = allOrders.filter(o => {
+                    const d = new Date(o.created_at);
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                });
+                labelText = "ยอดรวมเดือนนี้";
+            }
+
+            document.getElementById('summaryLabel').textContent = labelText;
+            renderOrderHistory(filtered);
+        }
+
+        function openCustomCalendar() {
+            document.getElementById('customCalendarModal').classList.add('active');
+            renderCalendarGrid();
+        }
+
+        function closeCustomCalendar() {
+            document.getElementById('customCalendarModal').classList.remove('active');
+        }
+
+        function changeMonth(direction) {
+            viewDate.setMonth(viewDate.getMonth() + direction);
+            renderCalendarGrid();
+        }
+
+        function renderCalendarGrid() {
+            const container = document.getElementById('calDaysContainer');
+            const monthYearLabel = document.getElementById('calMonthYear');
+            
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+
+            const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            monthYearLabel.textContent = `${thaiMonths[month]} ${year + 543}`;
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            let html = '';
+            for (let i = 0; i < firstDayIndex; i++) {
+                html += `<div class="cal-day empty"></div>`;
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const formattedMonth = String(month + 1).padStart(2, '0');
+                const formattedDay = String(day).padStart(2, '0');
+                const dateString = `${year}-${formattedMonth}-${formattedDay}`;
+
+                const isToday = dateString === todayStr;
+                const isSelected = dateString === selectedDateStr;
+
+                let classes = 'cal-day';
+                if (isToday) classes += ' today';
+                if (isSelected) classes += ' selected';
+
+                html += `<div class="${classes}" onclick="pickDate('${dateString}')">${day}</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function pickDate(dateString) {
+            selectedDateStr = dateString;
+            closeCustomCalendar();
+
+            const btn = document.getElementById('dateFilterBtn');
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('bg-white', 'shadow-xs', 'text-gray-800');
+                b.classList.add('text-gray-500');
+            });
+            btn.classList.add('bg-white', 'shadow-xs', 'text-gray-800');
+            btn.classList.remove('text-gray-500');
+
+            document.getElementById('dateButtonText').textContent = selectedDateStr;
+
+            const filtered = allOrders.filter(o => {
+                const orderDateStr = new Date(o.created_at).toISOString().split('T')[0];
+                return orderDateStr === selectedDateStr;
+            });
+
+            document.getElementById('summaryLabel').textContent = `ยอดรวมวันที่ ${selectedDateStr}`;
+            renderOrderHistory(filtered);
+        }
+
+        function selectToday() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            pickDate(todayStr);
+        }
+
+        function renderOrderHistory(orders) {
+            const container = document.getElementById('orderHistoryList');
+            
+            const sumTotal = orders.reduce((sum, order) => sum + getOrderTotalAmount(order), 0);
+            document.getElementById('summaryTotalAmount').textContent = sumTotal.toLocaleString() + ' ฿';
+
+            if (orders.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-xs py-10">ไม่พบประวัติออร์เดอร์ในช่วงเวลานี้</div>`;
+                return;
+            }
+
+            container.innerHTML = orders.map(order => {
+                const dateStr = new Date(order.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                const customerGroup = cleanGroupName(order.customer_group);
+                const totalAmount = getOrderTotalAmount(order).toLocaleString();
+                
+                return `
+                    <div class="bg-white py-2 px-1 border-b border-gray-100">
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <span class="font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-xs shrink-0">${customerGroup}</span>
+                                <span class="font-extrabold text-red-600 text-sm shrink-0">${totalAmount} ฿</span>
+                                <span class="text-[11px] text-gray-400 truncate">(${dateStr})</span>
+                            </div>
+                            <button onclick="openDetailModal(${order.id})" class="text-blue-600 hover:text-blue-800 font-bold text-xs px-2 py-1 transition shrink-0 cursor-pointer">
+                                Detail
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function openDetailModal(orderId) {
+            const contentContainer = document.getElementById('detailContent');
+            contentContainer.innerHTML = `<div class="text-center text-gray-400 py-4">กำลังโหลดรายการ...</div>`;
+            
+            const modal = document.getElementById('detailModal');
+            const box = document.getElementById('detailBox');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            box.classList.remove('scale-95');
+
+            try {
+                const targetOrder = allOrders.find(o => o.id == orderId);
+                if (targetOrder && targetOrder.items) {
+                    let items = targetOrder.items;
+                    if (typeof items === 'string') {
+                        try { items = JSON.parse(items); } catch(e) { items = []; }
+                    }
+                    if (Array.isArray(items) && items.length > 0) {
+                        renderItemsList(items);
+                        return;
+                    }
+                }
+
+                const { data: items, error } = await db.from('order_items').select('*').eq('order_id', orderId);
+                if (error) throw error;
+
+                if (items && items.length > 0) {
+                    renderItemsList(items);
+                } else {
+                    contentContainer.innerHTML = `<div class="text-center text-gray-400 py-4">ไม่มีรายการสินค้า</div>`;
+                }
+            } catch (err) {
+                console.error('Error loading order items:', err);
+                contentContainer.innerHTML = `<div class="text-center text-red-400 py-4">ไม่สามารถโหลดรายการสินค้าได้</div>`;
+            }
+        }
+
+        function renderItemsList(items) {
+            const contentContainer = document.getElementById('detailContent');
+            contentContainer.innerHTML = items.map(i => {
+                const qty = parseFloat(i.qty || i.quantity || 1);
+                const price = parseFloat(i.price || i.unit_price || i.p || 0);
+                const name = i.food_name || i.name || i.title || 'สินค้า';
+                const noteStr = i.note ? ` <span class="text-red-500">(${i.note})</span>` : '';
+                return `
+                    <div class="flex justify-between items-center bg-gray-50 p-2 rounded-xl">
+                        <span>• ${name}${noteStr} (x${qty})</span>
+                        <span class="font-bold text-slate-800">${(price * qty).toLocaleString()} ฿</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function closeDetailModal() {
+            const modal = document.getElementById('detailModal');
+            const box = document.getElementById('detailBox');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            box.classList.add('scale-95');
+        }
+    </script>
+</body>
+</html>

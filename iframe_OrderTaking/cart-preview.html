@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: sans-serif; background: transparent; margin: 0; padding: 0; }
+        .cart-preview-item { font-size: 11px; color: #333; display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; background: #f9fbfb; border-radius: 4px; border: 1px solid #edf2f2; margin-bottom: 3px; gap: 4px; }
+        .cart-item-left { display: flex; align-items: center; gap: 4px; overflow: hidden; flex: 1; }
+        .cart-item-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+        .cart-item-price { color: #2980b9; font-weight: bold; }
+        .cart-item-note { color: #e74c3c; font-weight: bold; }
+        .cart-item-qty { font-weight: bold; color: #27ae60; flex-shrink: 0; margin-left: 4px; }
+        .btn-remove-cart { background: none; border: none; color: #e74c3c; font-weight: bold; cursor: pointer; font-size: 11px; padding: 0 2px; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+
+<div id="cartPreviewList" class="flex flex-col">
+    <span style="font-size: 11px; color: #888;">ยังไม่มีรายการในตะกร้า</span>
+</div>
+
+<script>
+    function renderCart() {
+        const cart = JSON.parse(localStorage.getItem('restaurantCart') || "[]");
+        const container = document.getElementById('cartPreviewList');
+
+        if (cart.length === 0) {
+            container.innerHTML = `<span style="font-size: 11px; color: #888;">ยังไม่มีรายการในตะกร้า</span>`;
+            return;
+        }
+
+        container.innerHTML = '';
+        cart.forEach((item, index) => {
+            const div = document.createElement('div');
+            div.className = 'cart-preview-item';
+            div.innerHTML = `
+                <div class="cart-item-left">
+                    <span class="cart-item-text">${item.name} <span class="cart-item-price">(${item.price}.-)</span> ${item.note ? `<span class="cart-item-note">(${item.note})</span>` : ''}</span>
+                </div>
+                <div class="flex items-center shrink-0">
+                    <span class="cart-item-qty">x${item.qty}</span>
+                    <button class="btn-remove-cart" onclick="parent.removeFromCart(${index})">✕</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    window.onload = renderCart;
+    window.addEventListener('storage', renderCart);
+</script>
+</body>
+</html>
