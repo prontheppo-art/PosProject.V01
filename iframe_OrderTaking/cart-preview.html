@@ -22,11 +22,11 @@
 </div>
 
 <script>
-    function renderCart() {
-        const cart = JSON.parse(localStorage.getItem('restaurantCart') || "[]");
+    function loadCartData(cartData) {
         const container = document.getElementById('cartPreviewList');
+        const cart = cartData || JSON.parse(localStorage.getItem('restaurantCart') || localStorage.getItem('cart') || "[]");
 
-        if (cart.length === 0) {
+        if (!cart || cart.length === 0) {
             container.innerHTML = `<span style="font-size: 11px; color: #888;">ยังไม่มีรายการในตะกร้า</span>`;
             return;
         }
@@ -40,16 +40,21 @@
                     <span class="cart-item-text">${item.name} <span class="cart-item-price">(${item.price}.-)</span> ${item.note ? `<span class="cart-item-note">(${item.note})</span>` : ''}</span>
                 </div>
                 <div class="flex items-center shrink-0">
-                    <span class="cart-item-qty">x${item.qty}</span>
-                    <button class="btn-remove-cart" onclick="parent.removeFromCart(${index})">✕</button>
+                    <span class="cart-item-qty">x${item.qty || item.quantity || 1}</span>
+                    <button type="button" class="btn-remove-cart" onclick="parent.removeFromCart(${index})">✕</button>
                 </div>
             `;
             container.appendChild(div);
         });
     }
 
-    window.onload = renderCart;
-    window.addEventListener('storage', renderCart);
+    window.onload = function() {
+        loadCartData();
+    };
+
+    window.addEventListener('storage', function() {
+        loadCartData();
+    });
 </script>
 </body>
 </html>

@@ -6,42 +6,41 @@
     <title>เลือกกลุ่มลูกค้า</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html, body { height: 100%; margin: 0; padding: 0; font-family: sans-serif; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; }
-        .custom-modal-box { background: white; width: 90%; max-width: 360px; border-radius: 24px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); text-align: center; border-top: 6px solid #3b82f6; }
+        html, body { height: 100%; margin: 0; padding: 0; font-family: sans-serif; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
+        /* ปรับดีไซน์เป็นกรอบแบนธรรมดา ไม่มีความลึก 3 มิติ */
+        .simple-box { background: white; width: 90%; max-width: 360px; border: 2px solid #e2e8f0; border-radius: 12px; padding: 24px; text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="custom-modal-box">
-    <div class="text-base font-extrabold text-slate-800 mb-1">👥 กรุณาเลือกกลุ่มลูกค้า</div>
-    <p class="text-xs text-gray-500 mb-5">เลือกประเภทเพื่อกำหนดราคาและรูปแบบออร์เดอร์</p>
+<div class="simple-box">
+    <div class="text-base font-bold text-slate-800 mb-1">👥 เลือกกลุ่มลูกค้า</div>
+    <p class="text-xs text-gray-400 mb-6">เลือกเพื่อกำหนดราคาอาหาร</p>
     
     <div class="space-y-3">
-        <button type="button" onclick="selectGroupAndGo('ชาวบ้าน')" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-extrabold py-4 px-5 rounded-2xl shadow-md transition text-base flex items-center justify-center gap-2.5 cursor-pointer active:scale-95">
-            <span class="text-lg">🏠</span> ชาวบ้าน
+        <button type="button" onclick="selectGroupAndGo('ชาวบ้าน')" class="w-full bg-white border-2 border-blue-500 text-blue-600 font-bold py-3.5 rounded-lg transition hover:bg-blue-50 active:bg-blue-100 cursor-pointer text-sm">
+            🏠 ชาวบ้าน
         </button>
-        <button type="button" onclick="selectGroupAndGo('นักท่องเที่ยว')" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-extrabold py-4 px-5 rounded-2xl shadow-md transition text-base flex items-center justify-center gap-2.5 cursor-pointer active:scale-95">
-            <span class="text-lg">🎒</span> นักท่องเที่ยว
+        <button type="button" onclick="selectGroupAndGo('นักท่องเที่ยว')" class="w-full bg-white border-2 border-orange-500 text-orange-600 font-bold py-3.5 rounded-lg transition hover:bg-orange-50 active:bg-orange-100 cursor-pointer text-sm">
+            🎒 นักท่องเที่ยว
         </button>
-        <button type="button" onclick="selectGroupAndGo('สบายดี')" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold py-4 px-5 rounded-2xl shadow-md transition text-base flex items-center justify-center gap-2.5 cursor-pointer active:scale-95">
-            <span class="text-lg">🌿</span> สบายดี
+        <button type="button" onclick="selectGroupAndGo('สบายดี')" class="w-full bg-white border-2 border-emerald-500 text-emerald-600 font-bold py-3.5 rounded-lg transition hover:bg-emerald-50 active:bg-emerald-100 cursor-pointer text-sm">
+            🌿 สบายดี
         </button>
     </div>
 
-    <button type="button" onclick="closePopup()" class="mt-5 text-gray-400 hover:text-gray-600 text-xs font-bold py-1.5 px-3 cursor-pointer">
-        ✕ ปิดหน้าต่าง
+    <button type="button" onclick="closePopup()" class="mt-6 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer underline">
+        ยกเลิก
     </button>
 </div>
 
 <script>
     function selectGroupAndGo(groupName) {
         localStorage.setItem('selectedCustomerGroup', groupName);
-        // ไปยังไฟล์ OrderTaking.html ตามที่มีอยู่ในระบบจริง
         window.location.href = 'OrderTaking.html';
     }
 
     function closePopup() {
-        // กลับสู่หน้า Index.html หลัก
         window.location.href = 'Index.html';
     }
 </script>
