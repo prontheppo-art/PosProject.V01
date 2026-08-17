@@ -6,47 +6,79 @@
     <title>จัดการสูตรอาหารและวัตถุดิบ (Food Mapping)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="codekey.js"></script>
+    <script src="key.js"></script>
 </head>
-<body class="bg-gray-100 font-sans p-4 max-w-md mx-auto">
+<body class="bg-gray-100 font-sans p-4 min-h-screen flex items-start justify-center">
 
-    <!-- แถบเมนูด้านบน -->
-    <div class="flex justify-between items-center mb-4 bg-white p-3 rounded-xl shadow-sm">
-        <a href="adminmenu.html" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-            🔑 กลับผู้ดูแลระบบ
-        </a>
-        <span class="text-xs font-bold text-gray-600">🔗 จัดการสูตรอาหาร</span>
-        <a href="stockview.html" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-            📦 ดูสต็อก
-        </a>
-    </div>
-
-    <!-- ฟอร์มและตารางจัดการ -->
-    <div class="bg-white p-4 rounded-2xl shadow-md space-y-4">
-        <h2 class="text-sm font-bold text-gray-800 border-b pb-2">เพิ่ม/ผูกสูตรอาหารกับวัตถุดิบ</h2>
+    <!-- กรอบหลัก Fix หน้าจอให้อยู่กับที่ (ความสูง 92vh) -->
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] flex flex-col relative">
         
-        <div class="space-y-3">
-            <div>
-                <label class="block text-xs font-bold text-gray-600 mb-1">วัตถุดิบ:</label>
-                <select id="stockSelect" class="w-full p-2 border rounded-lg text-xs bg-white">
-                    <option value="">-- เลือกวัตถุดิบ --</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-gray-600 mb-1">เมนูอาหาร:</label>
-                <select id="foodSelect" class="w-full p-2 border rounded-lg text-xs bg-white">
-                    <option value="">-- เลือกเมนูอาหาร --</option>
-                </select>
-            </div>
-            <button onclick="addMapping()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs shadow">
-                + บันทึกการเชื่อมโยงสูตร
-            </button>
+        <!-- แถบหัวข้อด้านบน (เอาปุ่มดูสต็อกออกแล้ว เหลือแค่ชื่อหน้า) -->
+        <div class="shrink-0 bg-white pb-2 z-10 text-center">
+            <h2 class="text-base font-bold text-gray-800">🔗 จัดการสูตรอาหารและวัตถุดิบ</h2>
         </div>
 
-        <div class="mt-6">
-            <h3 class="text-xs font-bold text-gray-700 mb-2">รายการสูตรอาหารทั้งหมดในระบบ</h3>
-            <div id="mappingList" class="space-y-2">
-                <div class="text-center text-xs text-gray-400 py-4">กำลังโหลดข้อมูล...</div>
+        <hr class="border-gray-200 my-2 shrink-0">
+
+        <!-- ส่วนฟอร์มเพิ่ม/ผูกสูตรอาหาร (Fix ไม่ให้เลื่อนหลุด) -->
+        <div class="shrink-0 bg-white pb-3 space-y-3">
+            <div class="bg-blue-50 p-3 rounded-2xl border border-blue-100 space-y-2">
+                <h3 class="text-xs font-bold text-blue-800">➕ เพิ่ม/ผูกสูตรอาหารกับวัตถุดิบ</h3>
+                <div class="space-y-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-600 mb-0.5">วัตถุดิบ:</label>
+                        <select id="stockSelect" class="w-full p-2 border rounded-xl text-xs bg-white outline-none">
+                            <option value="">-- เลือกวัตถุดิบ --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-600 mb-0.5">เมนูอาหาร:</label>
+                        <select id="foodSelect" class="w-full p-2 border rounded-xl text-xs bg-white outline-none">
+                            <option value="">-- เลือกเมนูอาหาร --</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="addMapping()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow transition">
+                    + บันทึกการเชื่อมโยงสูตร
+                </button>
+            </div>
+        </div>
+
+        <!-- หัวข้อตารางรายการ -->
+        <div class="shrink-0 pt-2 pb-1 bg-white">
+            <h3 class="text-xs font-bold text-gray-700">📋 รายการสูตรอาหารทั้งหมดในระบบ</h3>
+        </div>
+
+        <!-- 📜 ส่วนตารางรายการที่จะให้ Scroll เลื่อนได้เฉพาะส่วนนี้ (Scroll Lock) -->
+        <div id="mappingList" class="overflow-y-auto pr-1 flex-1 content-start space-y-2 border border-gray-100 rounded-2xl p-2 bg-gray-50 mb-2">
+            <div class="text-center text-xs text-gray-400 py-4">กำลังโหลดข้อมูล...</div>
+        </div>
+
+        <!-- ส่วนปุ่มควบคุมด้านล่างสุด (ย้ายปุ่มกลับแอดมินมาไว้ตรงนี้ตามลูกศรชี้) -->
+        <div class="shrink-0 pt-2 border-t border-gray-100 mt-auto">
+            <a href="PageAdmin.html" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs text-center transition flex items-center justify-center gap-1 shadow-xs block">
+                🔑 กลับผู้ดูแลระบบ
+            </a>
+        </div>
+    </div>
+
+    <!-- 🌟 Custom Modal Popup ดีไซน์สวยงามแทน Alert เดิม -->
+    <div id="customModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-6 shadow-2xl transform scale-95 transition-transform duration-300 text-center space-y-4" id="modalBox">
+            <div id="modalIconContainer" class="w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl bg-blue-100 text-blue-600">
+                💡
+            </div>
+            <div class="space-y-1">
+                <h3 id="modalTitle" class="text-sm font-bold text-gray-800">แจ้งเตือน</h3>
+                <p id="modalMessage" class="text-xs text-gray-500 leading-relaxed">ข้อความแจ้งเตือน</p>
+            </div>
+            <div id="modalActionContainer" class="flex gap-2 pt-2">
+                <button id="modalCancelBtn" onclick="closeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition hidden">
+                    ยกเลิก
+                </button>
+                <button id="modalConfirmBtn" onclick="closeModal()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition">
+                    ตกลง
+                </button>
             </div>
         </div>
     </div>
@@ -59,9 +91,67 @@
             await loadMappings();
         };
 
+        // ฟังก์ชัน Custom Modal
+        function showModal({ title = "แจ้งเตือน", message, type = "info", showCancel = false, onConfirm = null }) {
+            const modal = document.getElementById('customModal');
+            const modalBox = document.getElementById('modalBox');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalIconContainer = document.getElementById('modalIconContainer');
+            const cancelBtn = document.getElementById('modalCancelBtn');
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+
+            modalTitle.innerText = title;
+            modalMessage.innerText = message;
+
+            if (type === 'success') {
+                modalIconContainer.className = "w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl bg-emerald-100 text-emerald-600";
+                modalIconContainer.innerText = "✅";
+                confirmBtn.className = "flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition";
+            } else if (type === 'error') {
+                modalIconContainer.className = "w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl bg-red-100 text-red-600";
+                modalIconContainer.innerText = "❌";
+                confirmBtn.className = "flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition";
+            } else {
+                modalIconContainer.className = "w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl bg-blue-100 text-blue-600";
+                modalIconContainer.innerText = "💡";
+                confirmBtn.className = "flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition";
+            }
+
+            if (showCancel) {
+                cancelBtn.classList.remove('hidden');
+            } else {
+                cancelBtn.classList.add('hidden');
+            }
+
+            confirmBtn.onclick = function() {
+                closeModal();
+                if (onConfirm) onConfirm();
+            };
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalBox.classList.remove('scale-95');
+                modalBox.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('customModal');
+            const modalBox = document.getElementById('modalBox');
+            
+            modal.classList.add('opacity-0');
+            modalBox.classList.remove('scale-100');
+            modalBox.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
         async function loadDropdowns() {
             try {
-                // โหลดสต็อก
                 const { data: stocks } = await db.from('food_stocks').select('food_name').order('food_name');
                 const stockSelect = document.getElementById('stockSelect');
                 if (stocks) {
@@ -73,7 +163,6 @@
                     });
                 }
 
-                // โหลดเมนูอาหาร (เก็บ id เป็น value แต่แสดง name)
                 const { data: foods } = await db.from('foods').select('id, name').order('name');
                 const foodSelect = document.getElementById('foodSelect');
                 if (foods) {
@@ -92,7 +181,6 @@
         async function loadMappings() {
             const listDiv = document.getElementById('mappingList');
             try {
-                // ดึงข้อมูล mapping พร้อม JOIN ดึงชื่อเมนูจากตาราง foods
                 const { data, error } = await db
                     .from('food_mappings')
                     .select(`
@@ -106,17 +194,20 @@
                 if (error) throw error;
 
                 if (!data || data.length === 0) {
-                    listDiv.innerHTML = '<div class="text-center text-xs text-gray-400 py-3">ยังไม่มีข้อมูลการผูกสูตร</div>';
+                    listDiv.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">ยังไม่มีข้อมูลการผูกสูตร</div>';
                     return;
                 }
 
-                let html = `<table class="w-full text-xs text-left border-collapse">
-                    <tr class="bg-gray-100 text-gray-600 border-b">
-                        <th class="p-2">รหัส</th>
-                        <th class="p-2">เมนูอาหาร</th>
-                        <th class="p-2">วัตถุดิบ</th>
-                        <th class="p-2 text-center">จัดการ</th>
-                    </tr>`;
+                let html = `<table class="w-full text-xs text-left border-collapse bg-white rounded-xl overflow-hidden shadow-xs">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-600 border-b">
+                            <th class="p-2">รหัส</th>
+                            <th class="p-2">เมนูอาหาร</th>
+                            <th class="p-2">วัตถุดิบ</th>
+                            <th class="p-2 text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
 
                 data.forEach(m => {
                     const foodName = m.foods ? m.foods.name : '<span class="text-red-400">(เมนูถูกลบ)</span>';
@@ -126,15 +217,15 @@
                         <td class="p-2 font-bold text-gray-800">${foodName}</td>
                         <td class="p-2 text-blue-600">${m.stock_name}</td>
                         <td class="p-2 text-center">
-                            <button onclick="deleteMapping(${m.id})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">ลบ</button>
+                            <button onclick="deleteMapping(${m.id})" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-xs">ลบ</button>
                         </td>
                     </tr>`;
                 });
-                html += `</table>`;
+                html += `</tbody></table>`;
                 listDiv.innerHTML = html;
             } catch (err) {
                 console.error(err);
-                listDiv.innerHTML = '<div class="text-center text-xs text-red-500 py-3">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+                listDiv.innerHTML = '<div class="text-center text-xs text-red-500 py-4">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
             }
         }
 
@@ -143,7 +234,11 @@
             const foodId = document.getElementById('foodSelect').value;
 
             if (!stockName || !foodId) {
-                alert('กรุณาเลือกวัตถุดิบและเมนูอาหารให้ครบถ้วน');
+                showModal({
+                    title: "กรอกข้อมูลไม่ครบ",
+                    message: "กรุณาเลือกวัตถุดิบและเมนูอาหารให้ครบถ้วน",
+                    type: "error"
+                });
                 return;
             }
 
@@ -151,24 +246,43 @@
                 const { error } = await db.from('food_mappings').insert([{ stock_name: stockName, food_id: foodId }]);
                 if (error) throw error;
 
-                alert('✅ บันทึกการเชื่อมโยงสูตรสำเร็จ');
+                showModal({
+                    title: "สำเร็จ",
+                    message: "บันทึกการเชื่อมโยงสูตรสำเร็จ",
+                    type: "success"
+                });
                 document.getElementById('stockSelect').value = '';
                 document.getElementById('foodSelect').value = '';
                 loadMappings();
             } catch (err) {
-                alert('เกิดข้อผิดพลาด: ' + err.message);
+                showModal({
+                    title: "เกิดข้อผิดพลาด",
+                    message: err.message,
+                    type: "error"
+                });
             }
         }
 
         async function deleteMapping(id) {
-            if (!confirm('ต้องการลบการเชื่อมโยงนี้ใช่หรือไม่?')) return;
-            try {
-                const { error } = await db.from('food_mappings').delete().eq('id', id);
-                if (error) throw error;
-                loadMappings();
-            } catch (err) {
-                alert('เกิดข้อผิดพลาด: ' + err.message);
-            }
+            showModal({
+                title: "ยืนยันการลบ",
+                message: "ต้องการลบการเชื่อมโยงนี้ใช่หรือไม่?",
+                type: "error",
+                showCancel: true,
+                onConfirm: async () => {
+                    try {
+                        const { error } = await db.from('food_mappings').delete().eq('id', id);
+                        if (error) throw error;
+                        loadMappings();
+                    } catch (err) {
+                        showModal({
+                            title: "เกิดข้อผิดพลาด",
+                            message: err.message,
+                            type: "error"
+                        });
+                    }
+                }
+            });
         }
     </script>
 </body>

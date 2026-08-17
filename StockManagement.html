@@ -10,7 +10,7 @@
 </head>
 <body class="bg-gray-100 font-sans p-4 min-h-screen flex items-start justify-center">
 
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] flex flex-col">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] flex flex-col relative">
         
         <!-- ส่วนหัวและฟอร์มเพิ่มสินค้า -->
         <div class="shrink-0 bg-white pb-3 z-10 space-y-3">
@@ -43,12 +43,100 @@
         </div>
     </div>
 
+    <!-- 🌟 Custom Modal Popup (ดีไซน์ใหม่สวยงาม ไม่ใช้ Default ของเครื่อง) -->
+    <div id="customModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-6 shadow-2xl transform scale-95 transition-transform duration-300 text-center space-y-4" id="modalBox">
+            <!-- ไอคอนจำลองสถานะ -->
+            <div id="modalIconContainer" class="w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl bg-orange-100 text-orange-600">
+                ⚠️
+            </div>
+            
+            <div class="space-y-1">
+                <h3 id="modalTitle" class="text-sm font-bold text-gray-800">แจ้งเตือน</h3>
+                <p id="modalMessage" class="text-xs text-gray-500 leading-relaxed">ข้อความแจ้งเตือนจะแสดงตรงนี้</p>
+            </div>
+
+            <div id="modalActionContainer" class="flex gap-2 pt-2">
+                <button id="modalCancelBtn" onclick="closeModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition hidden">
+                    ยกเลิก
+                </button>
+                <button id="modalConfirmBtn" onclick="closeModal()" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition">
+                    ตกลง
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         window.onload = async function() {
             await loadStocks();
         };
+
+        // ฟังก์ชันสำหรับเปิด Custom Modal
+        function showModal({ title = "แจ้งเตือน", message, type = "info", showCancel = false, onConfirm = null }) {
+            const modal = document.getElementById('customModal');
+            const modalBox = document.getElementById('modalBox');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalMessage = document.getElementById('modalMessage');
+            const modalIconContainer = document.getElementById('modalIconContainer');
+            const cancelBtn = document.getElementById('modalCancelBtn');
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+
+            modalTitle.innerText = title;
+            modalMessage.innerText = message;
+
+            // ปรับแต่งสีและไอคอนตามประเภท (success, error, info)
+            if (type === 'success') {
+                modalIconContainer.className = "w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl bg-emerald-100 text-emerald-600";
+                modalIconContainer.innerText = "✅";
+                confirmBtn.className = "flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition";
+            } else if (type === 'error') {
+                modalIconContainer.className = "w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl bg-red-100 text-red-600";
+                modalIconContainer.innerText = "❌";
+                confirmBtn.className = "flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition";
+            } else {
+                modalIconContainer.className = "w-14 h-14 mx-auto rounded-full flex items-center justify-center text-2xl bg-orange-100 text-orange-600";
+                modalIconContainer.innerText = "💡";
+                confirmBtn.className = "flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition";
+            }
+
+            // ซ่อนหรือแสดงปุ่มยกเลิก (สำหรับกรณี Confirm เช่น การลบ)
+            if (showCancel) {
+                cancelBtn.classList.remove('hidden');
+            } else {
+                cancelBtn.classList.add('hidden');
+            }
+
+            // กำหนดการทำงานเมื่อกดปุ่มตกลง
+            confirmBtn.onclick = function() {
+                closeModal();
+                if (onConfirm) onConfirm();
+            };
+
+            // แสดง Modal พร้อมอนิเมชัน
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalBox.classList.remove('scale-95');
+                modalBox.classList.add('scale-100');
+            }, 10);
+        }
+
+        // ฟังก์ชันปิด Custom Modal
+        function closeModal() {
+            const modal = document.getElementById('customModal');
+            const modalBox = document.getElementById('modalBox');
+            
+            modal.classList.add('opacity-0');
+            modalBox.classList.remove('scale-100');
+            modalBox.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
 
         async function loadStocks() {
             const container = document.getElementById('stockListContainer');
@@ -107,7 +195,11 @@
             let addVal = parseFloat(addInput.value);
 
             if (isNaN(addVal) || addVal <= 0) {
-                alert('กรุณากรอกจำนวนที่ต้องการเพิ่มให้ถูกต้อง');
+                showModal({
+                    title: "ข้อมูลไม่ถูกต้อง",
+                    message: "กรุณากรอกจำนวนที่ต้องการเพิ่มให้ถูกต้อง",
+                    type: "error"
+                });
                 return;
             }
 
@@ -123,7 +215,11 @@
                 
                 loadStocks();
             } catch (err) {
-                alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
+                showModal({
+                    title: "เกิดข้อผิดพลาด",
+                    message: err.message,
+                    type: "error"
+                });
             }
         }
 
@@ -132,7 +228,11 @@
             const qty = parseFloat(document.getElementById('newFoodQty').value);
 
             if (!name || isNaN(qty)) {
-                alert('กรุณากรอกชื่อและจำนวนตั้งต้นให้ครบถ้วน');
+                showModal({
+                    title: "กรอกข้อมูลไม่ครบ",
+                    message: "กรุณากรอกชื่อและจำนวนตั้งต้นให้ครบถ้วน",
+                    type: "error"
+                });
                 return;
             }
 
@@ -140,24 +240,43 @@
                 const { error } = await db.from('food_stocks').insert([{ food_name: name, quantity: qty, updated_at: new Date().toISOString() }]);
                 if (error) throw error;
 
-                alert('✅ เพิ่มรายการสินค้าใหม่สำเร็จ');
+                showModal({
+                    title: "สำเร็จ",
+                    message: "เพิ่มรายการสินค้าใหม่สำเร็จ",
+                    type: "success"
+                });
                 document.getElementById('newFoodName').value = '';
                 document.getElementById('newFoodQty').value = '';
                 loadStocks();
             } catch (err) {
-                alert('เกิดข้อผิดพลาด: ' + err.message);
+                showModal({
+                    title: "เกิดข้อผิดพลาด",
+                    message: err.message,
+                    type: "error"
+                });
             }
         }
 
         async function deleteStock(id) {
-            if (!confirm('ต้องการลบรายการสินค้านี้ออกจากสต็อกใช่หรือไม่?')) return;
-            try {
-                const { error } = await db.from('food_stocks').delete().eq('id', id);
-                if (error) throw error;
-                loadStocks();
-            } catch (err) {
-                alert('เกิดข้อผิดพลาด: ' + err.message);
-            }
+            showModal({
+                title: "ยืนยันการลบ",
+                message: "ต้องการลบรายการสินค้านี้ออกจากสต็อกใช่หรือไม่?",
+                type: "error",
+                showCancel: true,
+                onConfirm: async () => {
+                    try {
+                        const { error } = await db.from('food_stocks').delete().eq('id', id);
+                        if (error) throw error;
+                        loadStocks();
+                    } catch (err) {
+                        showModal({
+                            title: "เกิดข้อผิดพลาด",
+                            message: err.message,
+                            type: "error"
+                        });
+                    }
+                }
+            });
         }
     </script>
 </body>
