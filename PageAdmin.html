@@ -10,7 +10,7 @@
             margin: 0;
             padding: 0;
             font-family: sans-serif;
-            background: transparent; /* โปร่งใสตามที่ต้องการ */
+            background: transparent;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -18,7 +18,7 @@
 
         .main-card {
             background: #ffffff;
-            width: 96%; /* ขยายความกว้างกล่องให้เกือบเต็มจอ */
+            width: 96%;
             max-width: 500px;
             border-radius: 24px;
             padding: 30px 20px;
@@ -52,25 +52,25 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            width: 100%; /* ปุ่มจะขยายเต็มความกว้างของกล่อง */
+            width: 100%;
         }
 
         .menu-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            height: 52px; /* ฟิกซ์ความสูงเท่ากันทั้งหมด */
+            gap: 8px;
+            height: 52px;
             padding: 0 16px;
             border-radius: 12px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             color: white;
             text-decoration: none;
             box-shadow: 0 4px 10px rgba(0,0,0,0.06);
             transition: transform 0.1s ease;
             box-sizing: border-box;
-            width: 100%; /* กางปุ่มออกตามความกว้างกล่อง */
+            width: 100%;
         }
 
         .menu-btn:active {
@@ -93,23 +93,29 @@
         <div class="store-subtitle">จัดการระบบร้านอาหารและตรวจสอบยอดขาย</div>
 
         <div class="menu-list">
+            <!-- 1. AddFood -->
             <a href="AddFood.html" class="menu-btn btn-food">
-                <span>🍲 จัดการเมนูอาหาร & หมวดหมู่</span>
+                <span>🍲 จัดการเมนูอาหาร & หมวดหมู่ (AddFood)</span>
             </a>
+            <!-- 2. EditFood -->
             <a href="EditFood.html" class="menu-btn btn-price">
-                <span>📋 ดูแลและแก้ไขตารางราคา</span>
+                <span>📋 ดูแลและแก้ไขตารางราคา (EditFood)</span>
             </a>
-            <a href="StockManagement.html" class="menu-btn btn-stock-init">
-                <span>📦 จัดการสต็อกสินค้าตั้งต้น</span>
+            <!-- 3. inventory -->
+            <a href="inventory.html" class="menu-btn btn-stock-init">
+                <span>📦 สต็อกสินค้าคงเหลือ (inventory)</span>
             </a>
+            <!-- 4. foodmapping -->
             <a href="foodmapping.html" class="menu-btn btn-mapping">
-                <span>🔗 จัดการสูตรอาหาร & วัตถุดิบ</span>
+                <span>🔗 จัดการสูตรอาหาร & วัตถุดิบ (foodmapping)</span>
             </a>
+            <!-- 5. changepwd -->
             <a href="changepwd.html" class="menu-btn btn-password">
-                <span>🔑 เปลี่ยนรหัสผ่านแอดมิน</span>
+                <span>🔑 เปลี่ยนรหัสผ่านแอดมิน (changepwd)</span>
             </a>
+            <!-- 6. index -->
             <a href="index.html" class="menu-btn btn-home">
-                <span>🏠 กลับหน้าหลัก</span>
+                <span>🏠 กลับหน้าหลัก (index)</span>
             </a>
         </div>
     </div>
