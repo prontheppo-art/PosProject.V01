@@ -10,7 +10,7 @@
             margin: 0;
             padding: 0;
             font-family: sans-serif;
-            background: #f0f2f5;
+            background: transparent; /* โปร่งใสตามที่ต้องการ */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -18,8 +18,8 @@
 
         .main-card {
             background: #ffffff;
-            width: 90%;
-            max-width: 400px;
+            width: 96%; /* ขยายความกว้างกล่องให้เกือบเต็มจอ */
+            max-width: 500px;
             border-radius: 24px;
             padding: 30px 20px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
@@ -52,7 +52,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            width: 100%;
+            width: 100%; /* ปุ่มจะขยายเต็มความกว้างของกล่อง */
         }
 
         .menu-btn {
@@ -60,7 +60,8 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            padding: 14px 16px;
+            height: 52px; /* ฟิกซ์ความสูงเท่ากันทั้งหมด */
+            padding: 0 16px;
             border-radius: 12px;
             font-size: 14px;
             font-weight: bold;
@@ -69,6 +70,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.06);
             transition: transform 0.1s ease;
             box-sizing: border-box;
+            width: 100%; /* กางปุ่มออกตามความกว้างกล่อง */
         }
 
         .menu-btn:active {
@@ -91,27 +93,21 @@
         <div class="store-subtitle">จัดการระบบร้านอาหารและตรวจสอบยอดขาย</div>
 
         <div class="menu-list">
-            <!-- ปุ่มที่ 1 -->
             <a href="AddFood.html" class="menu-btn btn-food">
                 <span>🍲 จัดการเมนูอาหาร & หมวดหมู่</span>
             </a>
-            <!-- ปุ่มที่ 2 -->
             <a href="EditFood.html" class="menu-btn btn-price">
                 <span>📋 ดูแลและแก้ไขตารางราคา</span>
             </a>
-            <!-- ปุ่มที่ 3 -->
             <a href="StockManagement.html" class="menu-btn btn-stock-init">
                 <span>📦 จัดการสต็อกสินค้าตั้งต้น</span>
             </a>
-            <!-- ปุ่มที่ 4: จัดการสูตรอาหาร & วัตถุดิบ (เพิ่มใหม่) -->
             <a href="foodmapping.html" class="menu-btn btn-mapping">
                 <span>🔗 จัดการสูตรอาหาร & วัตถุดิบ</span>
             </a>
-            <!-- ปุ่มที่ 5 (เปลี่ยนรหัสผ่านแอดมิน) -->
             <a href="changepwd.html" class="menu-btn btn-password">
                 <span>🔑 เปลี่ยนรหัสผ่านแอดมิน</span>
             </a>
-            <!-- ปุ่มที่ 6 (กลับหน้าหลัก) -->
             <a href="index.html" class="menu-btn btn-home">
                 <span>🏠 กลับหน้าหลัก</span>
             </a>
