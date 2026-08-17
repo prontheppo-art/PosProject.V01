@@ -64,7 +64,6 @@
         </div>
     </div>
 
-    <!-- ปฏิทินเลือกวัน -->
     <div id="customCalendarModal" class="cal-modal">
         <div class="cal-box">
             <div class="flex justify-between items-center mb-3">
@@ -92,19 +91,18 @@
         </div>
     </div>
 
-    <!-- ป๊อปอัพรายละเอียดออร์เดอร์ -->
     <div id="detailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-200">
         <div class="bg-white w-[90%] max-w-[340px] rounded-2xl p-5 shadow-2xl transform scale-95 transition-transform duration-200" id="detailBox">
             <div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-3">
                 <h3 class="text-sm font-bold text-gray-800">📋 รายละเอียดออร์เดอร์</h3>
-                <button onclick="closeDetailModal()" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-xs cursor-pointer">✕</button>
+                <button onclick="closeDetailModal()" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-xs">✕</button>
             </div>
             <div id="detailContent" class="space-y-1.5 max-h-60 overflow-y-auto text-xs text-gray-600 mb-4 pr-1"></div>
-            <button onclick="closeDetailModal()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer shadow-sm">ปิดหน้าต่าง</button>
+            <button onclick="closeDetailModal()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 rounded-xl text-xs transition">ปิดหน้าต่าง</button>
         </div>
     </div>
 
-    <script src="root/key.js"></script>
+    <script src="key.js"></script>
     <script>
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -301,7 +299,7 @@
                                 <span class="font-extrabold text-red-600 text-sm shrink-0">${totalAmount} ฿</span>
                                 <span class="text-[11px] text-gray-400 truncate">(${dateStr})</span>
                             </div>
-                            <button onclick="openDetailModal(${order.id})" class="text-blue-600 hover:text-blue-800 font-bold text-xs px-2 py-1 transition shrink-0 cursor-pointer">
+                            <button onclick="openDetailModal(${order.id})" class="text-blue-600 hover:text-blue-800 font-bold text-xs px-2 py-1 transition shrink-0">
                                 Detail
                             </button>
                         </div>
@@ -356,7 +354,7 @@
                 return `
                     <div class="flex justify-between items-center bg-gray-50 p-2 rounded-xl">
                         <span>• ${name}${noteStr} (x${qty})</span>
-                        <span class="font-bold text-slate-800">${(price * qty).toLocaleString()} ฿</span>
+                        <span class="font-bold">${(price * qty).toLocaleString()} ฿</span>
                     </div>
                 `;
             }).join('');

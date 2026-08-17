@@ -20,23 +20,23 @@
     </div>
 
     <div class="w-full space-y-2.5 mt-1">
-        <!-- 1. ปุ่ม หน้าสั่งอาหาร (เชื่อมไปหน้าเลือกกลุ่มลูกค้า) -->
-        <button type="button" onclick="goToPage('Customer_Group.html')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+        <!-- 1. ปุ่ม หน้าสั่งอาหาร (ลิงก์ไป TakeOrder.html โดยตรง) -->
+        <button type="button" onclick="goToPage('TakeOrder.html')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
             <span>📝</span> หน้าสั่งอาหาร
         </button>
 
         <!-- 2. ปุ่ม สรุปยอดขาย & ประวัติออร์เดอร์ -->
-        <button type="button" onclick="goToPage('SaleSummary.html')" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+        <a href="SalesReport.html" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer no-underline">
             <span>📊</span> สรุปยอดขาย & ประวัติออร์เดอร์
-        </button>
+        </a>
 
         <!-- 3. ปุ่ม สต็อกสินค้าคงเหลือ -->
-        <button type="button" onclick="goToPage('StockView.html')" class="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+        <button type="button" onclick="goToPage('Stock.html')" class="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
             <span>📦</span> สต็อกสินค้าคงเหลือ
         </button>
 
         <!-- 4. ปุ่ม เข้าสู่ระบบผู้ดูแลระบบ -->
-        <button type="button" onclick="goToPage('AdminMenu.html')" class="w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+        <button type="button" onclick="goToPage('PageAdmin.html')" class="w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
             <span>🔒</span> เข้าสู่ระบบผู้ดูแลระบบ (โหมดพัฒนา)
         </button>
     </div>

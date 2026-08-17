@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตรวจสอบออร์เดอร์และตัดสต็อก</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Font (Prompt) -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container my-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>📋 ตรวจสอบออร์เดอร์และจัดการสต็อก</h2>
+            <a href="index.html" class="btn btn-secondary">กลับหน้าหลัก</a>
+        </div>
+
+        <!-- ตารางแสดงออร์เดอร์ที่รอตรวจสอบ -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>รหัสออร์เดอร์</th>
+                                <th>รายการสินค้าในออร์เดอร์</th>
+                                <th>ยอดรวม (บาท)</th>
+                                <th>สถานะ</th>
+                                <th class="text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">กำลังโหลดข้อมูลออร์เดอร์...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- โหลดค่าคอนฟิกจาก codekey.js -->
+    <script src="codekey.js"></script>
+
+    <script>
+        // แก้ไขให้ใช้ window.supabase และตัวแปร SUPABASE_KEY ให้ถูกต้อง
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // โหลดข้อมูลออร์เดอร์ทันทีเมื่อเปิดหน้าเว็บ
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchPendingOrders();
+        });
+
+        // ฟังก์ชันดึงออร์เดอร์ที่มีสถานะรอตรวจสอบ (pending)
+        async function fetchPendingOrders() {
+            try {
+                const { data: orders, error } = await db
+                    .from('orders')
+                    .select('*')
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const tableBody = document.getElementById('orderTableBody');
+                tableBody.innerHTML = '';
+
+                if (!orders || orders.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">ไม่มีออร์เดอร์ที่รอตรวจสอบในขณะนี้</td></tr>`;
+                    return;
+                }
+
+                orders.forEach(order => {
+                    let items = [];
+                    try {
+                        items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                    } catch (e) {
+                        items = [];
+                    }
+
+                    let itemsHtml = items.map(i => `<span class="badge bg-secondary me-1">${i.name} x ${i.qty || i.quantity}</span>`).join('');
+                    
+                    let tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>#${order.id}</strong></td>
+                        <td>${itemsHtml}</td>
+                        <td>${order.total_amount || order.total_price || 0}</td>
+                        <td><span class="badge bg-warning text-dark">รอตรวจสอบ</span></td>
+                        <td class="text-center">
+                            <button class="btn btn-success btn-sm" onclick='confirmOrderAndCutStock(${order.id}, ${JSON.stringify(items)})'>
+                                ยืนยัน & ตัดสต็อก
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+            } catch (err) {
+                console.error('Error fetching orders:', err.message);
+                document.getElementById('orderTableBody').innerHTML = `<tr><td colspan="5" class="text-center text-danger py-4">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}</td></tr>`;
+            }
+        }
+
+        // ฟังก์ชันยืนยันออร์เดอร์และตัดสต็อกแบบปลอดภัย
+        async function confirmOrderAndCutStock(orderId, cart) {
+            if (!confirm(`คุณต้องการยืนยันออร์เดอร์ #${orderId} และตัดสต็อกวัตถุดิบใช่หรือไม่?`)) return;
+
+            try {
+                // ขั้นที่ 1: ตรวจสอบความเพียงพอของวัตถุดิบทั้งหมดล่วงหน้า
+                for (let item of cart) {
+                    const { data: mappings, error: mapError } = await db
+                        .from('food_mappings')
+                        .select('*')
+                        .eq('food_id', item.id);
+
+                    if (mapError) throw mapError;
+                    if (!mappings || mappings.length === 0) continue;
+
+                    for (let map of mappings) {
+                        const itemQty = item.qty || item.quantity || 1;
+                        const requiredQty = map.quantity * itemQty;
+
+                        const { data: stockData, error: stockError } = await db
+                            .from('food_stocks')
+                            .select('*')
+                            .eq('food_name', map.stock_name)
+                            .single();
+
+                        if (stockError || !stockData) {
+                            throw new Error(`ไม่พบวัตถุดิบ "${map.stock_name}" ในตาราง food_stocks`);
+                        }
+
+                        if (stockData.quantity < requiredQty) {
+                            throw new Error(`วัตถุดิบไม่เพียงพอ: "${map.stock_name}" (ต้องการ: ${requiredQty}, คงเหลือ: ${stockData.quantity})`);
+                        }
+                    }
+                }
+
+                // ขั้นที่ 2: ดำเนินการตัดสต็อกจริงในฐานข้อมูล
+                for (let item of cart) {
+                    const { data: mappings } = await db
+                        .from('food_mappings')
+                        .select('*')
+                        .eq('food_id', item.id);
+
+                    if (!mappings || mappings.length === 0) continue;
+
+                    for (let map of mappings) {
+                        const itemQty = item.qty || item.quantity || 1;
+                        const requiredQty = map.quantity * itemQty;
+
+                        const { data: stockData } = await db
+                            .from('food_stocks')
+                            .select('id, quantity')
+                            .eq('food_name', map.stock_name)
+                            .single();
+
+                        if (stockData) {
+                            const newQuantity = stockData.quantity - requiredQty;
+                            
+                            const { error: updateStockError } = await db
+                                .from('food_stocks')
+                                .update({ quantity: newQuantity })
+                                .eq('id', stockData.id);
+
+                            if (updateStockError) throw updateStockError;
+                        }
+                    }
+                }
+
+                // ขั้นที่ 3: เปลี่ยนสถานะออร์เดอร์เป็น 'confirmed'
+                const { error: orderUpdateError } = await db
+                    .from('orders')
+                    .update({ status: 'confirmed' })
+                    .eq('id', orderId);
+
+                if (orderUpdateError) throw orderUpdateError;
+
+                alert('✅ ยืนยันออร์เดอร์และตัดสต็อกสำเร็จเรียบร้อยแล้ว!');
+                fetchPendingOrders();
+
+            } catch (err) {
+                console.error('Stock Deduction Error:', err.message);
+                alert('❌ ไม่สามารถยืนยันออร์เดอร์ได้: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

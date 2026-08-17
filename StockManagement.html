@@ -6,13 +6,13 @@
     <title>จัดการสต็อกสินค้า</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="codekey.js"></script>
+    <script src="key.js"></script>
 </head>
 <body class="bg-gray-100 font-sans p-4 min-h-screen flex items-start justify-center">
 
     <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] flex flex-col">
         
-        <!-- ส่วนหัวและฟอร์มเพิ่มสินค้า (ย้ายปุ่มเพิ่มรายการขึ้นมาด้านบน และเปลี่ยนข้อความ) -->
+        <!-- ส่วนหัวและฟอร์มเพิ่มสินค้า -->
         <div class="shrink-0 bg-white pb-3 z-10 space-y-3">
             <h2 class="text-base font-bold text-gray-800 text-center">📦 จัดการสต็อกสินค้า</h2>
 
@@ -30,21 +30,16 @@
 
         <hr class="border-gray-200 my-2 shrink-0">
 
-        <!-- รายการสต็อกทั้งหมดแบบ 3 ช่อง (เลื่อนดูได้ตรงกลาง) -->
+        <!-- รายการสต็อกทั้งหมด -->
         <div id="stockListContainer" class="space-y-2 overflow-y-auto pr-1 flex-1 content-start mb-2">
             <div class="text-center text-xs text-gray-400 py-4">กำลังโหลดข้อมูล...</div>
         </div>
 
         <!-- ส่วนปุ่มควบคุมด้านล่างสุด -->
         <div class="shrink-0 pt-2 border-t border-gray-100 mt-auto">
-            <div class="grid grid-cols-2 gap-2">
-                <a href="adminmenu.html" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs text-center transition flex items-center justify-center gap-1 shadow-xs">
-                    🔑 กลับไปที่หน้าแอดมินเมนู
-                </a>
-                <button onclick="saveAllStocks()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-sm">
-                    💾 บันทึกการเติมสต็อก
-                </button>
-            </div>
+            <a href="PageAdmin.html" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs text-center transition flex items-center justify-center gap-1 shadow-xs block">
+                🔑 กลับไปที่หน้าแอดมินเมนู
+            </a>
         </div>
     </div>
 
@@ -77,7 +72,7 @@
                                 <div class="font-bold text-xs text-gray-800 truncate">${item.food_name}</div>
                                 <div class="text-[9px] text-gray-400">อัปเดต: ${updateDate}</div>
                             </div>
-                            <div class="flex items-center gap-1 shrink-0">
+                            <div class="flex items-center gap-1.5 shrink-0">
                                 <!-- ช่องคงเหลือ -->
                                 <div class="text-center">
                                     <div class="text-[8px] text-gray-400">คงเหลือ</div>
@@ -86,12 +81,14 @@
                                 <!-- ช่องเพิ่ม -->
                                 <div class="text-center">
                                     <div class="text-[8px] text-orange-600 font-bold">เพิ่ม</div>
-                                    <input type="number" id="add_${item.id}" oninput="calculateTotal(${item.id}, ${item.quantity})" placeholder="" class="w-10 p-1 border rounded-lg text-xs text-center font-bold bg-orange-50 focus:bg-white focus:border-orange-500 outline-none">
+                                    <input type="number" id="add_${item.id}" placeholder="" class="w-10 p-1 border rounded-lg text-xs text-center font-bold bg-orange-50 focus:bg-white focus:border-orange-500 outline-none">
                                 </div>
-                                <!-- ช่องรวม -->
+                                <!-- ปุ่มเครื่องหมายบวก (+) สำหรับยืนยันการรวมสต็อก -->
                                 <div class="text-center">
                                     <div class="text-[8px] text-emerald-600 font-bold">รวม</div>
-                                    <input type="text" id="total_${item.id}" value="${item.quantity}" readonly class="w-10 p-1 border rounded-lg text-xs text-center font-bold bg-emerald-50 text-emerald-700">
+                                    <button onclick="confirmAddStock(${item.id}, ${item.quantity})" class="w-8 h-7 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-lg text-sm flex items-center justify-center shadow-sm transition">
+                                        +
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -100,19 +97,34 @@
                 container.innerHTML = html;
             } catch (err) {
                 console.error(err);
-                container.innerHTML = '<div class="text-center text-xs text-red-500 py-4">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+                container.innerHTML = '<div class="text-center text-red-500 py-4">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
             }
         }
 
-        // คำนวณยอดรวมอัตโนมัติเมื่อพิมพ์ช่องเพิ่ม
-        function calculateTotal(id, currentQty) {
+        // ฟังก์ชันเมื่อคลิกปุ่มบวก (+) เพื่อรวมตัวเลขและบันทึกลงฐานข้อมูลทันที
+        async function confirmAddStock(id, currentQty) {
             const addInput = document.getElementById(`add_${id}`);
-            const totalInput = document.getElementById(`total_${id}`);
             let addVal = parseFloat(addInput.value);
-            if (isNaN(addVal)) {
-                addVal = 0;
+
+            if (isNaN(addVal) || addVal <= 0) {
+                alert('กรุณากรอกจำนวนที่ต้องการเพิ่มให้ถูกต้อง');
+                return;
             }
-            totalInput.value = currentQty + addVal;
+
+            const newTotalQty = currentQty + addVal;
+
+            try {
+                const { error } = await db.from('food_stocks').update({ 
+                    quantity: newTotalQty, 
+                    updated_at: new Date().toISOString() 
+                }).eq('id', id);
+
+                if (error) throw error;
+                
+                loadStocks();
+            } catch (err) {
+                alert('เกิดข้อผิดพลาดในการบันทึก: ' + err.message);
+            }
         }
 
         async function addStockItem() {
@@ -131,42 +143,6 @@
                 alert('✅ เพิ่มรายการสินค้าใหม่สำเร็จ');
                 document.getElementById('newFoodName').value = '';
                 document.getElementById('newFoodQty').value = '';
-                loadStocks();
-            } catch (err) {
-                alert('เกิดข้อผิดพลาด: ' + err.message);
-            }
-        }
-
-        async function saveAllStocks() {
-            if (!confirm('ยืนยันการบันทึกยอดรวมสต็อกทั้งหมดใช่หรือไม่?')) return;
-            try {
-                const inputs = document.querySelectorAll('input[id^="add_"]');
-                let updatedCount = 0;
-
-                for (let input of inputs) {
-                    const addVal = parseFloat(input.value);
-
-                    // ถ้ามีการกรอกช่องเพิ่มเข้ามา
-                    if (!isNaN(addVal) && addVal !== 0) {
-                        const id = input.id.replace('add_', '');
-                        const totalInput = document.getElementById(`total_${id}`);
-                        const newTotalQty = parseFloat(totalInput.value);
-
-                        await db.from('food_stocks').update({ 
-                            quantity: newTotalQty, 
-                            updated_at: new Date().toISOString() 
-                        }).eq('id', id);
-
-                        updatedCount++;
-                    }
-                }
-
-                if (updatedCount > 0) {
-                    alert('✅ บันทึกยอดรวมสต็อกเรียบร้อยแล้ว');
-                } else {
-                    alert('ℹ️ไม่มีการเปลี่ยนแปลงจำนวน (ไม่ได้กรอกช่องเพิ่มสต็อก)');
-                }
-                
                 loadStocks();
             } catch (err) {
                 alert('เกิดข้อผิดพลาด: ' + err.message);
