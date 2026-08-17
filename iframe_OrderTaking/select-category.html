@@ -3,97 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เลือกหมวดหมู่อาหาร</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Select Category</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { font-family: sans-serif; background: #fff; margin: 0; padding: 4px; }
-        .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .category-card { background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 12px 10px; border-radius: 10px; text-align: center; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 3px 6px rgba(0,0,0,0.12); transition: transform 0.1s; }
-        .category-card:active { transform: scale(0.97); }
-        .category-card:nth-child(2) { background: linear-gradient(135deg, #e67e22, #d35400); }
-        .category-card:nth-child(3) { background: linear-gradient(135deg, #27ae60, #219653); }
-        .category-card:nth-child(4) { background: linear-gradient(135deg, #8e44ad, #732d91); }
-        .category-card:nth-child(n+5) { background: linear-gradient(135deg, #16a085, #1abc9c); }
-
-        .food-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .food-card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../../root/key.js"></script>
 </head>
-<body>
-
-    <div class="category-grid" id="categoryGridContainer">
-        <div class="text-center col-span-2 text-gray-500 py-4 text-xs">⏳ กำลังโหลด...</div>
+<body class="bg-transparent m-0 p-1">
+    <!-- ส่วนแสดงหมวดหมู่ทั้งหมด พร้อมระบบเลื่อน Scroll ขขึ้น-ลง -->
+    <div id="categoryContainer" class="h-full overflow-y-auto pr-1 space-y-2">
+        <div class="text-center text-gray-400 py-4 text-xs">กำลังโหลดหมวดหมู่...</div>
     </div>
 
-    <div id="categoryFoodModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-white flex justify-between items-center shadow-md">
-                <h3 id="modalCategoryTitle" class="text-xs font-extrabold">รายการอาหาร</h3>
-                <button type="button" onclick="closeCategoryModal()" class="text-white font-bold text-xs">✕</button>
-            </div>
-            <div id="modalFoodListContainer" class="p-3 overflow-y-auto flex-grow bg-slate-50"></div>
-            <div class="p-2.5 bg-white border-t text-center">
-                <button type="button" onclick="closeCategoryModal()" class="px-5 py-1.5 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">ปิด</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="../root/key.js"></script>
     <script>
-        const supabaseUrl = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '';
-        const supabaseKey = typeof SUPABASE_KEY !== 'undefined' ? SUPABASE_KEY : '';
-        const db = (supabaseUrl && supabaseKey) ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+        document.addEventListener("DOMContentLoaded", () => {
+            loadCategories();
+        });
 
-        // ดึงกลุ่มลูกค้าที่เลือกจากหน้าหลัก (สมมติว่ามีการตั้งค่าไว้ใน localStorage หรือส่งผ่าน parent)
-        const getCustomerGroup = () => localStorage.getItem('selectedCustomerGroup') || 'ชาวบ้าน';
+        async function loadCategories() {
+            const container = document.getElementById('categoryContainer');
 
-        window.onload = async function() {
-            const { data: foods } = await db.from('foods').select('*');
-            const categories = [...new Set(foods.map(f => f.category || 'อื่นๆ'))].sort();
-            const container = document.getElementById('categoryGridContainer');
-            container.innerHTML = '';
-            categories.forEach(cat => {
-                const card = document.createElement('div');
-                card.className = 'category-card';
-                card.textContent = `📁 ${cat}`;
-                card.onclick = () => openCategoryModal(cat);
-                container.appendChild(card);
-            });
-        };
+            const fallbackCategories = [
+                { id: 1, name: 'ข้าว / ข้าวต้ม / ข้าวกล่อง' },
+                { id: 2, name: 'ต้ม / แกง' },
+                { id: 3, name: 'ลาบ / ก้อย / ตกหมู' },
+                { id: 4, name: 'ยำ / ทอด / ผัด' },
+                { id: 5, name: 'เครื่องดื่ม' },
+                { id: 6, name: 'ของทานเล่น' }
+            ];
 
-        async function openCategoryModal(categoryName) {
-            document.getElementById('categoryFoodModal').classList.remove('hidden');
-            const container = document.getElementById('modalFoodListContainer');
-            container.innerHTML = `<div class="text-center py-8 text-xs">กำลังดึงราคาสำหรับกลุ่ม: ${getCustomerGroup()}...</div>`;
+            try {
+                const { data, error } = await supabase.from('categories').select('id, name');
+                
+                if (error) throw error;
 
-            // ดึงข้อมูลอาหารและราคาของกลุ่มนั้นๆ
-            const { data: foods } = await db.from('foods').select('*').eq('category', categoryName);
-            const { data: prices } = await db.from('food_prices').select('food_id, price').eq('group_name', getCustomerGroup());
+                const categoriesToRender = (data && data.length > 0) ? data : fallbackCategories;
+                renderCategories(categoriesToRender);
 
-            container.innerHTML = '';
-            const gridDiv = document.createElement('div');
-            gridDiv.className = 'food-grid';
-
-            foods.forEach(food => {
-                const priceObj = prices.find(p => p.food_id === food.id);
-                const price = priceObj ? priceObj.price : 0;
-
-                const card = document.createElement('div');
-                card.className = 'food-card';
-                card.innerHTML = `
-                    <div class="mb-2">
-                        <div class="font-bold text-xs mb-1">${food.name}</div>
-                        <div class="text-xs text-blue-600 font-bold">${price} บาท</div>
-                    </div>
-                    <button class="w-full bg-green-600 text-white py-1.5 rounded-lg text-xs font-bold">➕ เลือก</button>
-                `;
-                gridDiv.appendChild(card);
-            });
-            container.appendChild(gridDiv);
+            } catch (err) {
+                console.error("Using fallback categories due to error:", err);
+                renderCategories(fallbackCategories);
+            }
         }
 
-        function closeCategoryModal() { document.getElementById('categoryFoodModal').classList.add('hidden'); }
+        function renderCategories(categories) {
+            const container = document.getElementById('categoryContainer');
+            container.innerHTML = '';
+
+            const gridDiv = document.createElement('div');
+            gridDiv.className = "grid grid-cols-2 gap-2";
+
+            const colors = [
+                "bg-blue-600 hover:bg-blue-700",
+                "bg-amber-700 hover:bg-amber-800",
+                "bg-emerald-600 hover:bg-emerald-700",
+                "bg-purple-600 hover:bg-purple-700",
+                "bg-rose-600 hover:bg-rose-700",
+                "bg-teal-600 hover:bg-teal-700"
+            ];
+
+            categories.forEach((cat, index) => {
+                const colorClass = colors[index % colors.length];
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                /* เอาไอคอนออก ปรับ padding และจัดข้อให้อยู่ตรงกลางหรือสวยงามตามต้องการ */
+                btn.className = `${colorClass} text-white p-3 rounded-xl text-left flex items-center shadow transition cursor-pointer min-h-[50px]`;
+                btn.innerHTML = `
+                    <span class="font-bold text-xs">${cat.name}</span>
+                `;
+                btn.onclick = () => {
+                    if (window.parent && typeof window.parent.selectCategory === 'function') {
+                        window.parent.selectCategory(cat.name);
+                    }
+                };
+                gridDiv.appendChild(btn);
+            });
+
+            container.appendChild(gridDiv);
+        }
     </script>
 </body>
 </html>

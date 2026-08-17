@@ -43,18 +43,15 @@
                 <span id="phoneError" class="text-red-500 text-[10px] hidden">เบอร์โทรต้องครบ 10 หลัก</span>
             </div>
             
-            <!-- เบอร์โทร และ ปุ่มเลือก สถานที่ (แดง) / โซน (เขียว) -->
             <div class="grid grid-cols-3 gap-2">
                 <input type="text" id="phoneInput" placeholder="เบอร์โทร 10 หลัก" maxlength="10" 
                        class="p-1.5 border rounded-lg text-center bg-white shadow-sm text-xs" 
                        oninput="validateAndSavePhone()">
                 
-                <!-- ปุ่มเลือกสถานที่ (วงกลมแดง) -->
                 <button type="button" onclick="openLocationSelection()" class="p-1.5 border rounded-lg bg-white font-bold text-gray-700 text-left truncate shadow-sm cursor-pointer hover:bg-amber-100 transition">
                     <span id="selectedLocationText">-- สถานที่ --</span>
                 </button>
                 
-                <!-- ปุ่มเลือกโซน (วงกลมเขียว) -->
                 <button type="button" onclick="openZoneSelection()" class="p-1.5 border rounded-lg bg-white font-bold text-gray-700 text-left truncate shadow-sm cursor-pointer hover:bg-amber-100 transition">
                     <span id="selectedZoneText">-- โซน --</span>
                 </button>
@@ -66,9 +63,7 @@
     <div id="selectionModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-xl max-w-xs w-full p-4 space-y-3 shadow-lg">
             <h3 id="modalTitle" class="font-bold text-amber-900 text-sm text-center">เลือกสถานที่จัดส่ง</h3>
-            <div id="modalListContainer" class="max-h-48 overflow-y-auto space-y-1.5 text-xs">
-                <!-- รายการข้อมูล -->
-            </div>
+            <div id="modalListContainer" class="max-h-48 overflow-y-auto space-y-1.5 text-xs"></div>
             <button type="button" onclick="closeSelectionModal()" class="w-full bg-gray-200 text-gray-700 font-bold py-1.5 rounded-lg text-xs cursor-pointer">
                 ปิด
             </button>
@@ -78,6 +73,12 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             loadSavedData();
+            // ตรวจสอบการเปลี่ยนแปลงจากหน้าต่างอื่นแบบ Real-time
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'customerGroupName' || e.key === 'selectedCustomerGroup') {
+                    loadSavedData();
+                }
+            });
         });
 
         function selectCustomerGroup(groupName, groupId) {
@@ -118,9 +119,12 @@
                 localStorage.removeItem('customerZone');
                 localStorage.removeItem('customerLocationId');
                 localStorage.removeItem('customerZoneId');
-                document.getElementById('phoneInput').value = '';
-                document.getElementById('selectedLocationText').textContent = '-- สถานที่ --';
-                document.getElementById('selectedZoneText').textContent = '-- โซน --';
+                const phoneInput = document.getElementById('phoneInput');
+                if (phoneInput) phoneInput.value = '';
+                const locText = document.getElementById('selectedLocationText');
+                if (locText) locText.textContent = '-- สถานที่ --';
+                const zoneText = document.getElementById('selectedZoneText');
+                if (zoneText) zoneText.textContent = '-- โซน --';
             }
         }
 
@@ -143,7 +147,6 @@
             }
         }
 
-        // --- เปิดเลือกสถานที่ (วงกลมแดง) พร้อมข้อมูลสำรองรีสอร์ต ---
         async function openLocationSelection() {
             if (window.parent && typeof window.parent.openLocationModal === 'function') {
                 window.parent.openLocationModal();
@@ -159,7 +162,6 @@
             modal.classList.remove('hidden');
             modal.classList.add('flex');
 
-            // รายการรีสอร์ตสำรอง (ป้องกันกรณีโหลดจากฐานข้อมูลไม่ได้)
             const fallbackLocations = [
                 { id: 1, name: 'บาหลี รีสอร์ท' },
                 { id: 2, name: 'บ้านเขาบ้านเรา' },
@@ -170,10 +172,8 @@
             try {
                 const { data, error } = await supabase.from('locations').select('id, name');
                 if (error) throw error;
-
                 renderLocationList(data && data.length > 0 ? data : fallbackLocations);
             } catch (err) {
-                console.warn('Using fallback locations due to:', err.message);
                 renderLocationList(fallbackLocations);
             }
         }
@@ -205,7 +205,6 @@
             });
         }
 
-        // --- เปิดเลือกโซน (วงกลมเขียว) ตามสถานที่ที่เลือก ---
         async function openZoneSelection() {
             if (window.parent && typeof window.parent.openZoneModal === 'function') {
                 window.parent.openZoneModal();
@@ -242,10 +241,8 @@
                     .eq('location_id', locationId);
 
                 if (error) throw error;
-
                 renderZoneList(data && data.length > 0 ? data : fallbackZones);
             } catch (err) {
-                console.warn('Using fallback zones due to:', err.message);
                 renderZoneList(fallbackZones);
             }
         }
@@ -286,17 +283,17 @@
             toggleDeliverySection(savedGroup);
 
             const phone = localStorage.getItem('customerPhone');
-            if (phone) {
+            if (phone && document.getElementById('phoneInput')) {
                 document.getElementById('phoneInput').value = phone;
             }
 
             const loc = localStorage.getItem('customerLocation');
-            if (loc) {
+            if (loc && document.getElementById('selectedLocationText')) {
                 document.getElementById('selectedLocationText').textContent = loc;
             }
 
             const zone = localStorage.getItem('customerZone');
-            if (zone) {
+            if (zone && document.getElementById('selectedZoneText')) {
                 document.getElementById('selectedZoneText').textContent = zone;
             }
         }
