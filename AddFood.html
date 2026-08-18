@@ -7,61 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า ป้องกันการยืดหดของ viewport บนมือถือ */
         html, body { 
-            height: 100%; 
-            margin: 0; 
-            padding: 0; 
-            overflow: hidden; 
-            font-family: sans-serif; 
-            background: #f4f6f9; 
-            touch-action: pan-y; 
-            -webkit-text-size-adjust: 100%;
-            -webkit-user-select: none;
-            user-select: none;
+            height: 100%; margin: 0; padding: 0; overflow: hidden; 
+            font-family: sans-serif; background: #f4f6f9; 
+            touch-action: pan-y; -webkit-text-size-adjust: 100%;
+            -webkit-user-select: none; user-select: none;
         }
-        
-        /* จัดโครงสร้างด้วย Grid: แถวบนสุด(auto ล็อกหัว), แถวกลาง(1fr ขยายตามพื้นที่ที่เหลือและให้สกอร์เฉพาะตรงนี้), แถวล่างสุด(auto ล็อกท้าย) */
         .app-layout { 
-            display: grid; 
-            grid-template-rows: auto 1fr auto; 
-            height: 100dvh; 
-            max-width: 500px; 
-            margin: 0 auto; 
-            background: #fff; 
-            box-sizing: border-box; 
-            overflow: hidden;
-            padding: 16px;
+            display: grid; grid-template-rows: auto 1fr auto; 
+            height: 100dvh; max-width: 500px; margin: 0 auto; 
+            background: #fff; box-sizing: border-box; overflow: hidden; padding: 16px;
         }
-
-        /* ฟิกซ์หัวด้านบนและส่วนฟอร์ม */
-        .header-section { 
-            background: #fff; 
-            z-index: 10; 
-            flex-shrink: 0; 
-        }
-        
-        /* พื้นที่ตรงกลาง: ให้สโครลเฉพาะในส่วนนี้เมื่อรายการอาหารเยอะ หัวกับท้ายจะนิ่งสนิท */
-        .content-section { 
-            overflow-y: auto; 
-            display: flex; 
-            flex-direction: column; 
-            -webkit-overflow-scrolling: touch;
-            min-height: 0;
-        }
-
-        /* ฟิกซ์ท้ายด้านล่าง (ปุ่มควบคุม) ล็อกติดขอบล่างตลอดเวลา */
-        .footer-section { 
-            background: #fff; 
-            z-index: 10; 
-            flex-shrink: 0; 
-        }
+        .header-section { background: #fff; z-index: 10; flex-shrink: 0; }
+        .content-section { overflow-y: auto; display: flex; flex-direction: column; -webkit-overflow-scrolling: touch; min-height: 0; }
+        .footer-section { background: #fff; z-index: 10; flex-shrink: 0; }
     </style>
 </head>
 <body class="bg-gray-100 flex items-start justify-center">
     <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] app-layout">
         
-        <!-- ส่วนหัวและฟอร์มด้านบน (ล็อกนิ่ง) -->
+        <!-- ส่วนหัวและฟอร์มด้านบน (หน้า 1) -->
         <div class="header-section pb-3">
             <h2 class="text-xl font-bold text-red-600 text-center mb-3">ระบบจัดการเมนูอาหาร</h2>
             
@@ -69,15 +34,15 @@
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-bold text-gray-700">หมวดหมู่</label>
-                        <button type="button" onclick="openEditCategoryModal()" id="editCategoryBtn" class="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition items-center gap-1 shadow-2xs">
-                            ✏️ แก้ไขกลุ่มรายการ
+                        <button type="button" onclick="openCategoryManagerModal()" class="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition items-center gap-1 shadow-2xs">
+                            ✏️ จัดการกลุ่มรายการ
                         </button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
                     <div class="relative">
-                        <button type="button" onclick="toggleCategoryDropdown()" id="categorySelectBtn" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs outline-none bg-white font-medium text-left flex items-center justify-between shadow-2xs">
+                        <button type="button" onclick="toggleDropdown()" id="categorySelectBtn" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs outline-none bg-white font-medium text-left flex items-center justify-between shadow-2xs">
                             <span id="selectedCategoryText" class="truncate text-gray-700">-- แสดงทั้งหมด --</span>
                             <span class="text-gray-400 text-[10px] shrink-0 ml-1">▼</span>
                         </button>
@@ -97,124 +62,115 @@
             </div>
             
             <hr class="border-gray-200 my-2">
-
             <div class="text-xs font-bold text-gray-700 mb-2">
                 <span class="text-red-500">❌</span> เพื่อลบ / แตะเพื่อแก้ไขข้อมูล:
             </div>
         </div>
         
-        <!-- รายการเมนูอาหาร (เลื่อนดูได้เฉพาะตรงกลาง) -->
+        <!-- รายการเมนูอาหาร (หน้า 2) -->
         <div class="content-section">
             <div id="menuListContainer" class="grid grid-cols-2 gap-2 pr-1 content-start">
                 <div class="col-span-2 text-center text-gray-400 text-xs py-4">⏳ กำลังโหลดรายการเมนู...</div>
             </div>
         </div>
 
-        <!-- ส่วนปุ่มควบคุมด้านล่างสุด (ล็อกติดขอบล่าง) -->
+        <!-- ส่วนปุ่มควบคุมด้านล่างสุด -->
         <div class="footer-section pt-2 border-t border-gray-100 mt-auto">
             <div class="grid grid-cols-2 gap-2">
                 <a href="PageAdmin.html" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs text-center transition flex items-center justify-center gap-1 shadow-xs">
                     🔑 กลับผู้ดูแลระบบ
                 </a>
-                <button onclick="saveMenu()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-sm">
+                <button onclick="handleSaveMenu()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-sm">
                     💾 บันทึก
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal ต่างๆ -->
-    <div id="editCategoryModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-6 text-center space-y-3">
-            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-1 shadow-inner">✏️</div>
-            <h3 class="font-bold text-sm text-gray-800">แก้ไขชื่อกลุ่มรายการ</h3>
-            <p id="editCategorySubText" class="text-[11px] text-gray-500">เปลี่ยนชื่อหมวดหมู่จากเดิม</p>
-            <input type="text" id="editCategoryInput" placeholder="ชื่อกลุ่มรายการใหม่..." class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs outline-none text-center font-medium bg-gray-50 focus:bg-white transition">
-            <div class="grid grid-cols-2 gap-2 pt-1">
-                <button onclick="closeEditCategoryModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition">ยกเลิก</button>
-                <button onclick="confirmEditCategory()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm">บันทึกการแก้ไข</button>
+    <!-- Modal จัดการกลุ่มรายการ (เพิ่ม / แก้ไข / ลบ) -->
+    <div id="editCategoryModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50 animate-fade-in">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 flex flex-col space-y-4 max-h-[85vh]">
+            
+            <!-- ส่วนหัว Modal -->
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-lg shadow-inner">📁</div>
+                    <div>
+                        <h3 class="font-bold text-sm text-gray-800">จัดการกลุ่มรายการอาหาร</h3>
+                        <p class="text-[10px] text-gray-400">เพิ่มกลุ่มใหม่ หรือเลือกแก้ไขกลุ่มเดิม</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('editCategoryModal')" class="w-8 h-8 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-full flex items-center justify-center text-xs transition">✕</button>
             </div>
+
+            <!-- ฟอร์มกรอกชื่อ (เพิ่มหรือแก้ไข) -->
+            <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 space-y-2">
+                <div class="flex justify-between items-center">
+                    <label id="catFormLabel" class="text-[11px] font-bold text-indigo-600">➕ เพิ่มกลุ่มรายการใหม่</label>
+                    <button type="button" id="cancelEditCatBtn" onclick="resetCategoryForm()" class="hidden text-[10px] text-red-500 hover:underline">ยกเลิกการแก้ไข</button>
+                </div>
+                <input type="hidden" id="editingCategoryId" value="">
+                <div class="flex gap-2">
+                    <input type="text" id="editCategoryInput" placeholder="ระบุชื่อกลุ่มรายการ..." class="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-xs outline-none bg-white font-medium text-gray-800 focus:border-indigo-500 transition">
+                    <button onclick="handleSaveCategoryAction()" id="saveCatBtnText" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm shrink-0">เพิ่ม</button>
+                </div>
+            </div>
+
+            <!-- รายการกลุ่มที่มีอยู่ -->
+            <div class="flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-[140px] max-h-[220px]" id="modalCategoryListContainer"></div>
+
+            <!-- ปุ่มปิดด้านล่าง -->
+            <button onclick="closeModal('editCategoryModal')" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition">ปิดหน้าต่าง</button>
         </div>
     </div>
 
+    <!-- Modal ย้ายกลุ่ม / แก้ไขเมนู -->
     <div id="moveCategoryModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
-        <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-6 text-left space-y-3 animate-in fade-in zoom-in duration-200">
+        <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-6 text-left space-y-3">
             <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-1 shadow-inner">✏️</div>
             <h3 class="font-bold text-sm text-gray-800 text-center">จัดการรายการอาหาร</h3>
-            <p id="moveMenuTitleText" class="text-[11px] text-gray-500 text-center pb-1">แก้ไขชื่อหรือย้ายกลุ่มรายการ</p>
-            
             <div class="space-y-2">
                 <div>
                     <label class="block text-[11px] font-bold text-gray-700 mb-1">ชื่อเมนูอาหาร:</label>
-                    <input type="text" id="editMenuNameInput" placeholder="ชื่อเมนูอาหาร..." class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs outline-none bg-gray-50 focus:bg-white font-medium text-gray-800 transition shadow-2xs">
+                    <input type="text" id="editMenuNameInput" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs outline-none bg-gray-50 font-medium text-gray-800">
                 </div>
-
                 <div>
                     <label class="block text-[11px] font-bold text-gray-700 mb-1">กลุ่มรายการ (หมวดหมู่):</label>
-                    <select id="targetCategorySelect" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs outline-none bg-gray-50 focus:bg-white font-medium text-gray-800 transition shadow-2xs"></select>
+                    <select id="targetCategorySelect" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs outline-none bg-gray-50 font-medium text-gray-800"></select>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-2 pt-2">
-                <button onclick="closeMoveCategoryModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition text-center">ยกเลิก</button>
-                <button onclick="confirmEditAndMoveMenu()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-sm text-center">บันทึกการแก้ไข</button>
+                <button onclick="closeModal('moveCategoryModal')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition text-center">ยกเลิก</button>
+                <button onclick="handleUpdateMenu()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition text-center">บันทึก</button>
             </div>
         </div>
     </div>
 
+    <!-- Modal แจ้งเตือน (ใช้เฉพาะกรณีเกิดข้อผิดพลาดสำคัญ เช่น กรอกข้อมูลไม่ครบ) -->
     <div id="alertModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
         <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-6 text-center space-y-3">
             <div id="alertIcon" class="text-3xl mb-1">⚠️</div>
             <h3 id="alertTitle" class="font-bold text-sm text-gray-800">แจ้งเตือน</h3>
             <p id="alertMessage" class="text-xs text-gray-600">ข้อความ...</p>
-            <button onclick="document.getElementById('alertModal').classList.add('hidden')" class="w-full bg-red-600 text-white font-bold py-2 rounded-xl text-xs">ตกลง</button>
+            <button onclick="closeModal('alertModal')" class="w-full bg-red-600 text-white font-bold py-2 rounded-xl text-xs">ตกลง</button>
         </div>
     </div>
 
     <script src="key.js"></script>
     <script>
-        // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
-        document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
-        document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
-        document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
-
-        // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (event) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, { passive: false });
-
-        // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
-        document.addEventListener('touchstart', function (event) {
-            if (event.touches.length > 1) {
-                event.preventDefault();
-            }
-        }, { passive: false });
-
-        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        let allMenus = [];
-        let allGroups = [];
-        let categoriesList = [];
-        let currentSelectedCategory = 'all';
-        let selectedFoodIdForMove = null;
-
-        function cleanGroupName(name) {
-            if (!name) return '';
-            return name
-                .replace(/ชาวบ้าน\s*\/\s*/g, '')
-                .replace(/สมาชิก\s*VIP\s*\/\s*/g, '')
-                .trim();
-        }
+        let state = {
+            menus: [],
+            groups: [],
+            categories: [],
+            selectedCategory: 'all', 
+            activeFoodId: null
+        };
 
         window.addEventListener('DOMContentLoaded', async () => {
-            await loadGroups();
-            await loadFoods();
-
+            await initAppData();
+            
             window.addEventListener('click', (e) => {
                 const btn = document.getElementById('categorySelectBtn');
                 const popup = document.getElementById('categoryDropdownPopup');
@@ -224,249 +180,304 @@
             });
         });
 
-        async function loadCategoriesFromFoods() {
-            const uniqueCategories = [...new Set(allMenus.map(m => m.category).filter(Boolean))];
-            categoriesList = uniqueCategories.sort();
-            renderCategoryDropdownPopup();
+        async function initAppData() {
+            await fetchCustomerGroups();
+            await fetchCategories();
+            await fetchMenus();
+        }
 
-            if (currentSelectedCategory !== 'all' && !categoriesList.includes(currentSelectedCategory)) {
-                selectCategory('all', '-- แสดงทั้งหมด --');
+        async function fetchCustomerGroups() {
+            const { data, error } = await supabaseClient.from('customer_groups').select('*').order('id', { ascending: true });
+            if (!error && data) {
+                state.groups = data;
+                renderPriceInputs();
             }
         }
 
-        function renderCategoryDropdownPopup() {
+        async function fetchCategories() {
+            const { data, error } = await supabaseClient.from('food_groups').select('id, name').order('name', { ascending: true });
+            if (!error && data) {
+                state.categories = data;
+                renderDropdownMenu();
+                renderModalCategoryList();
+            }
+        }
+
+        async function fetchMenus() {
+            const { data, error } = await supabaseClient.from('foods').select('id, name, category_id').order('name', { ascending: true });
+            if (!error && data) {
+                state.menus = data;
+                renderMenuList();
+            }
+        }
+
+        function renderPriceInputs() {
+            const container = document.getElementById('priceInputsContainer');
+            container.innerHTML = state.groups.map(g => {
+                const cleanName = g.name.replace(/ชาวบ้าน\s*\/\s*/g, '').replace(/สมาชิก\s*VIP\s*\/\s*/g, '').trim();
+                return `
+                    <div class="bg-gray-50 p-1.5 rounded-xl border border-gray-200 flex flex-col items-center">
+                        <span class="text-[10px] font-bold text-gray-600 truncate mb-1 w-full text-center">${cleanName}</span>
+                        <input type="number" data-group-id="${g.id}" placeholder="ราคา" min="0" step="any"
+                               class="app-price-input w-full border border-gray-300 rounded-lg px-1 py-1 text-center text-xs outline-none bg-white">
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDropdownMenu() {
             const popup = document.getElementById('categoryDropdownPopup');
-            
             let html = `
-                <div onclick="selectCategory('all', '-- แสดงทั้งหมด --')" class="px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition hover:bg-gray-100 flex items-center justify-between whitespace-nowrap gap-4 ${currentSelectedCategory === 'all' ? 'bg-red-50 text-red-600 font-bold' : 'text-gray-700'}">
+                <div onclick="selectCategory('all', '-- แสดงทั้งหมด --')" class="px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition hover:bg-gray-100 flex items-center justify-between whitespace-nowrap gap-4 ${state.selectedCategory === 'all' ? 'bg-red-50 text-red-600 font-bold' : 'text-gray-700'}">
                     <span class="truncate">-- แสดงทั้งหมด --</span>
-                    ${currentSelectedCategory === 'all' ? '<span class="shrink-0 ml-2">✓</span>' : ''}
+                    ${state.selectedCategory === 'all' ? '<span class="shrink-0 ml-2">✓</span>' : ''}
                 </div>
             `;
 
-            categoriesList.forEach(cat => {
-                const isSelected = currentSelectedCategory === cat;
+            state.categories.forEach(cat => {
+                const isSelected = String(state.selectedCategory) === String(cat.id);
                 html += `
-                    <div onclick="selectCategory('${cat}', '${cat}')" class="px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition hover:bg-gray-100 flex items-center justify-between whitespace-nowrap gap-4 ${isSelected ? 'bg-red-50 text-red-600 font-bold' : 'text-gray-700'}">
-                        <span class="truncate">📁 ${cat}</span>
+                    <div onclick="selectCategory(${cat.id}, '${cat.name.replace(/'/g, "\\'")}')" class="px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition hover:bg-gray-100 flex items-center justify-between whitespace-nowrap gap-4 ${isSelected ? 'bg-red-50 text-red-600 font-bold' : 'text-gray-700'}">
+                        <span class="truncate">📁 ${cat.name}</span>
                         ${isSelected ? '<span class="shrink-0 ml-2">✓</span>' : ''}
                     </div>
                 `;
             });
-
             popup.innerHTML = html;
         }
 
-        function toggleCategoryDropdown() {
-            const popup = document.getElementById('categoryDropdownPopup');
-            popup.classList.toggle('hidden');
-        }
-
-        function selectCategory(value, label) {
-            currentSelectedCategory = value;
-            document.getElementById('selectedCategoryText').textContent = label;
+        function selectCategory(id, name) {
+            state.selectedCategory = id;
+            document.getElementById('selectedCategoryText').textContent = name;
             document.getElementById('categoryDropdownPopup').classList.add('hidden');
-            renderCategoryDropdownPopup();
-            filterMenuList();
+            renderDropdownMenu();
+            renderMenuList();
         }
 
-        function openEditCategoryModal() {
-            if (currentSelectedCategory === 'all') {
-                showAlert('แจ้งเตือน', 'กรุณาเลือกกลุ่มรายการที่ต้องการแก้ไขก่อน');
-                return;
-            }
-            document.getElementById('editCategoryInput').value = currentSelectedCategory;
-            document.getElementById('editCategorySubText').textContent = `กำลังแก้ไขหมวดหมู่: "${currentSelectedCategory}"`;
-            document.getElementById('editCategoryModal').classList.remove('hidden');
+        function toggleDropdown() {
+            document.getElementById('categoryDropdownPopup').classList.toggle('hidden');
         }
 
-        function closeEditCategoryModal() {
-            document.getElementById('editCategoryModal').classList.add('hidden');
-        }
-
-        async function confirmEditCategory() {
-            const oldCatName = currentSelectedCategory;
-            const newCatName = document.getElementById('editCategoryInput').value.trim();
-
-            if (!newCatName) {
-                showAlert('แจ้งเตือน', 'กรุณากรอกชื่อกลุ่มรายการใหม่');
-                return;
-            }
-
-            if (oldCatName === newCatName) {
-                closeEditCategoryModal();
-                return;
-            }
-
-            if (categoriesList.includes(newCatName)) {
-                showAlert('แจ้งเตือน', 'มีชื่อกลุ่มรายการนี้อยู่ในระบบแล้ว');
-                return;
-            }
-
-            const { error: foodErr } = await db.from('foods').update({ category: newCatName }).eq('category', oldCatName);
-            if (foodErr) {
-                showAlert('ข้อผิดพลาด', 'ไม่สามารถอัปเดตชื่อหมวดหมู่ในรายการอาหารได้: ' + foodErr.message);
-                return;
-            }
-
-            closeEditCategoryModal();
-            await loadFoods();
-            selectCategory(newCatName, newCatName);
-        }
-
-        function openMoveCategoryModal(foodId, foodName, currentCat) {
-            selectedFoodIdForMove = foodId;
-            document.getElementById('editMenuNameInput').value = foodName;
-            
-            const selectEl = document.getElementById('targetCategorySelect');
-            selectEl.innerHTML = categoriesList.map(cat => `
-                <option value="${cat}" ${cat === currentCat ? 'selected' : ''}>📁 ${cat}</option>
-            `).join('');
-
-            document.getElementById('moveCategoryModal').classList.remove('hidden');
-        }
-
-        function closeMoveCategoryModal() {
-            document.getElementById('moveCategoryModal').classList.add('hidden');
-            selectedFoodIdForMove = null;
-        }
-
-        async function confirmEditAndMoveMenu() {
-            if (!selectedFoodIdForMove) return;
-            const newName = document.getElementById('editMenuNameInput').value.trim();
-            const newCategory = document.getElementById('targetCategorySelect').value;
-
-            if (!newName) {
-                showAlert('แจ้งเตือน', 'กรุณากรอกชื่อเมนูอาหาร');
-                return;
-            }
-
-            const { error } = await db.from('foods')
-                .update({ name: newName, category: newCategory })
-                .eq('id', selectedFoodIdForMove);
-
-            if (error) {
-                showAlert('ข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้: ' + error.message);
-                return;
-            }
-
-            closeMoveCategoryModal();
-            await loadFoods();
-            showAlert('สำเร็จ', 'อัปเดตข้อมูลเมนูอาหารเรียบร้อยแล้ว', '✅');
-        }
-
-        async function loadGroups() {
-            const container = document.getElementById('priceInputsContainer');
-            const { data, error } = await db.from('customer_groups').select('*').order('id', { ascending: true });
-            if (data) {
-                allGroups = data;
-                container.innerHTML = data.map(g => `
-                    <div class="bg-gray-50 p-1.5 rounded-xl border border-gray-200 flex flex-col items-center">
-                        <span class="text-[10px] font-bold text-gray-600 truncate mb-1 w-full text-center">${cleanGroupName(g.name)}</span>
-                        <input type="number" data-group-id="${g.id}" placeholder="ราคา" min="0" step="any"
-                               class="price-input w-full border border-gray-300 rounded-lg px-1 py-1 text-center text-xs outline-none bg-white">
-                    </div>
-                `).join('');
-            } else if (error) {
-                container.innerHTML = `<div class="col-span-3 text-center text-red-500 text-xs py-2">โหลดกลุ่มลูกค้าไม่สำเร็จ</div>`;
-            }
-        }
-
-        async function loadFoods() {
-            const { data: mData } = await db.from('foods').select('*').order('name', { ascending: true });
-            allMenus = mData || [];
-            await loadCategoriesFromFoods();
-            filterMenuList();
-        }
-
-        function filterMenuList() {
+        function renderMenuList() {
             const container = document.getElementById('menuListContainer');
-            
-            let filtered = allMenus;
-            if (currentSelectedCategory !== 'all') {
-                filtered = allMenus.filter(m => m.category === currentSelectedCategory);
+            let filtered = state.menus;
+
+            if (state.selectedCategory !== 'all') {
+                filtered = state.menus.filter(m => String(m.category_id) === String(state.selectedCategory));
             }
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-2 text-center text-gray-400 text-xs py-4">ยังไม่มีรายการเมนูในระบบ</div>`;
+                container.innerHTML = `<div class="col-span-2 text-center text-gray-400 text-xs py-4">ยังไม่มีรายการเมนูในกลุ่มนี้</div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(m => `
                 <div class="flex items-center bg-white border border-gray-200 hover:bg-red-50/30 p-2 rounded-xl transition shadow-2xs h-fit gap-2">
-                    <button onclick="deleteMenu('${m.id}', '${m.name.replace(/'/g, "\\'")}')" class="w-5 h-5 bg-red-100 hover:bg-red-200 text-red-500 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" title="ลบเมนู">✕</button>
-                    <span onclick="openMoveCategoryModal('${m.id}', '${m.name.replace(/'/g, "\\'")}', '${m.category}')" class="text-[11px] font-medium text-gray-800 truncate cursor-pointer hover:text-blue-600 transition flex-1" title="คลิกเพื่อแก้ไขชื่อหรือย้ายกลุ่ม">${m.name}</span>
+                    <button onclick="handleDeleteMenu('${m.id}', '${m.name.replace(/'/g, "\\'")}')" class="w-5 h-5 bg-red-100 hover:bg-red-200 text-red-500 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" title="ลบเมนู">✕</button>
+                    <span onclick="openEditMenuModal('${m.id}', '${m.name.replace(/'/g, "\\'")}', '${m.category_id}')" class="text-[11px] font-medium text-gray-800 truncate cursor-pointer hover:text-blue-600 transition flex-1" title="คลิกเพื่อแก้ไข">${m.name}</span>
                 </div>
             `).join('');
         }
 
-        async function saveMenu() {
-            const category = currentSelectedCategory;
-            const name = document.getElementById('menuNameInput').value.trim();
-            
-            if (!category || category === 'all' || !name) {
-                showAlert('แจ้งเตือน', 'กรุณาเลือกหมวดหมู่ (ที่ไม่ใช่ทั้งหมด) และกรอกชื่อเมนู');
-                return;
-            }
-            
-            const { data: foodData, error: foodErr } = await db.from('foods').insert([{ name, category }]).select();
-            
-            if (foodErr) {
-                showAlert('แจ้งเตือน', 'บันทึกไม่สำเร็จหรือมีชื่อเมนูนี้อยู่แล้ว: ' + foodErr.message);
+        function openCategoryManagerModal() {
+            resetCategoryForm();
+            renderModalCategoryList();
+            openModal('editCategoryModal');
+        }
+
+        function renderModalCategoryList() {
+            const container = document.getElementById('modalCategoryListContainer');
+            if (state.categories.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-400 text-xs py-4">ยังไม่มีกลุ่มรายการ</div>`;
                 return;
             }
 
-            if (foodData && foodData.length > 0) {
-                const foodId = foodData[0].id;
+            container.innerHTML = state.categories.map(cat => `
+                <div class="flex items-center justify-between bg-white border border-gray-200 p-2.5 rounded-xl shadow-2xs hover:border-indigo-300 transition">
+                    <span class="text-xs font-medium text-gray-700 truncate flex-1">📁 ${cat.name}</span>
+                    <div class="flex items-center gap-1.5 shrink-0 ml-2">
+                        <button onclick="prepareEditCategory(${cat.id}, '${cat.name.replace(/'/g, "\\'")}')" class="bg-amber-50 hover:bg-amber-100 text-amber-600 px-2.5 py-1 rounded-lg text-[10px] font-bold transition">แก้ไข</button>
+                        <button onclick="handleDeleteCategory(${cat.id}, '${cat.name.replace(/'/g, "\\'")}')" class="bg-red-50 hover:bg-red-100 text-red-500 px-2 py-1 rounded-lg text-[10px] font-bold transition">ลบ</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function prepareEditCategory(id, name) {
+            document.getElementById('editingCategoryId').value = id;
+            document.getElementById('editCategoryInput').value = name;
+            document.getElementById('catFormLabel').textContent = '✏️ แก้ไขชื่อกลุ่มรายการ';
+            document.getElementById('saveCatBtnText').textContent = 'บันทึก';
+            document.getElementById('cancelEditCatBtn').classList.remove('hidden');
+            document.getElementById('editCategoryInput').focus();
+        }
+
+        function resetCategoryForm() {
+            document.getElementById('editingCategoryId').value = '';
+            document.getElementById('editCategoryInput').value = '';
+            document.getElementById('catFormLabel').textContent = '➕ เพิ่มกลุ่มรายการใหม่';
+            document.getElementById('saveCatBtnText').textContent = 'เพิ่ม';
+            document.getElementById('cancelEditCatBtn').classList.add('hidden');
+        }
+
+        async function handleSaveCategoryAction() {
+            const editingId = document.getElementById('editingCategoryId').value;
+            const inputName = document.getElementById('editCategoryInput').value.trim();
+
+            if (!inputName) {
+                showAlert('แจ้งเตือน', 'กรุณากรอกชื่อกลุ่มรายการ');
+                return;
+            }
+
+            if (!editingId) {
+                const { data, error } = await supabaseClient.from('food_groups').insert([{ name: inputName }]).select();
+                if (error) {
+                    showAlert('ข้อผิดพลาด', 'ไม่สามารถเพิ่มกลุ่มได้: ' + error.message);
+                    return;
+                }
+                resetCategoryForm();
+                await fetchCategories();
+                if (data && data.length > 0) {
+                    selectCategory(data[0].id, data[0].name);
+                }
+            } else {
+                const { error } = await supabaseClient.from('food_groups').update({ name: inputName }).eq('id', editingId);
+                if (error) {
+                    showAlert('ข้อผิดพลาด', 'ไม่สามารถแก้ไขกลุ่มได้: ' + error.message);
+                    return;
+                }
                 
-                const priceInputs = document.querySelectorAll('.price-input');
-                const priceRecords = [];
-
-                priceInputs.forEach(input => {
-                    const groupId = input.getAttribute('data-group-id');
-                    const priceVal = parseFloat(input.value);
-                    if (!isNaN(priceVal) && priceVal >= 0) {
-                        priceRecords.push({
-                            food_id: foodId,
-                            customer_group_id: parseInt(groupId),
-                            price: priceVal
-                        });
-                    }
-                });
-
-                if (priceRecords.length > 0) {
-                    const { error: priceErr } = await db.from('food_prices').insert(priceRecords);
-                    if (priceErr) {
-                        console.error("เกิดข้อผิดพลาดในการบันทึกราคา:", priceErr);
-                    }
+                if (String(state.selectedCategory) === String(editingId)) {
+                    document.getElementById('selectedCategoryText').textContent = inputName;
                 }
 
-                document.getElementById('menuNameInput').value = '';
-                priceInputs.forEach(i => i.value = '');
-                
-                await loadFoods();
-                selectCategory(category, category);
+                resetCategoryForm();
+                await fetchCategories();
             }
         }
 
-        async function deleteMenu(id, name) {
+        async function handleDeleteCategory(id, name) {
+            if (!confirm(`ต้องการลบกลุ่ม "${name}" ใช่หรือไม่?\n(เมนูอาหารที่อยู่ในกลุ่มนี้อาจได้รับผลกระทบ)`)) return;
+
+            const { error } = await supabaseClient.from('food_groups').delete().eq('id', id);
+            if (error) {
+                showAlert('ข้อผิดพลาด', 'ไม่สามารถลบกลุ่มได้ (อาจมีเมนูอาหารอ้างอิงอยู่): ' + error.message);
+                return;
+            }
+
+            if (String(state.selectedCategory) === String(id)) {
+                selectCategory('all', '-- แสดงทั้งหมด --');
+            }
+
+            await fetchCategories();
+            await fetchMenus();
+        }
+
+        async function handleSaveMenu() {
+            const categoryId = state.selectedCategory;
+            const nameInput = document.getElementById('menuNameInput');
+            const name = nameInput.value.trim();
+
+            if (categoryId === 'all' || !categoryId) {
+                showAlert('แจ้งเตือน', 'กรุณาเลือกหมวดหมู่ก่อนบันทึกรายการอาหาร');
+                return;
+            }
+            if (!name) {
+                showAlert('แจ้งเตือน', 'กรุณากรอกชื่อเมนูอาหาร');
+                return;
+            }
+
+            const { data, error } = await supabaseClient.from('foods').insert([{ name, category_id: Number(categoryId) }]).select();
+            if (error) {
+                showAlert('ข้อผิดพลาด', 'ไม่สามารถบันทึกเมนูได้: ' + error.message);
+                return;
+            }
+
+            if (data && data.length > 0) {
+                const foodId = data[0].id;
+                const priceInputs = document.querySelectorAll('.app-price-input');
+                const priceList = [];
+
+                priceInputs.forEach(input => {
+                    const groupId = input.getAttribute('data-group-id');
+                    const val = parseFloat(input.value);
+                    if (!isNaN(val) && val >= 0) {
+                        priceList.push({ food_id: foodId, customer_group_id: Number(groupId), price: val });
+                    }
+                });
+
+                if (priceList.length > 0) {
+                    await supabaseClient.from('food_prices').insert(priceList);
+                }
+
+                nameInput.value = '';
+                priceInputs.forEach(i => i.value = '');
+                await fetchMenus();
+            }
+        }
+
+        function openEditMenuModal(id, name, catId) {
+            state.activeFoodId = id;
+            document.getElementById('editMenuNameInput').value = name;
+            
+            const selectEl = document.getElementById('targetCategorySelect');
+            selectEl.innerHTML = state.categories.map(cat => `
+                <option value="${cat.id}" ${String(cat.id) === String(catId) ? 'selected' : ''}>📁 ${cat.name}</option>
+            `).join('');
+
+            openModal('moveCategoryModal');
+        }
+
+        async function handleUpdateMenu() {
+            if (!state.activeFoodId) return;
+            const name = document.getElementById('editMenuNameInput').value.trim();
+            const categoryId = document.getElementById('targetCategorySelect').value;
+
+            if (!name) {
+                showAlert('แจ้งเตือน', 'กรุณากรอกชื่อเมนูอาหาร');
+                return;
+            }
+
+            const { error } = await supabaseClient.from('foods')
+                .update({ name, category_id: Number(categoryId) })
+                .eq('id', state.activeFoodId);
+
+            if (error) {
+                showAlert('ข้อผิดพลาด', 'ไม่สามารถอัปเดตข้อมูลได้: ' + error.message);
+                return;
+            }
+
+            closeModal('moveCategoryModal');
+            state.activeFoodId = null;
+            await fetchMenus();
+        }
+
+        async function handleDeleteMenu(id, name) {
             if (!confirm(`ต้องการลบเมนู "${name}" ใช่หรือไม่?`)) return;
-            
-            await db.from('food_prices').delete().eq('food_id', id);
-            const { error } = await db.from('foods').delete().eq('id', id);
-            
+
+            await supabaseClient.from('food_prices').delete().eq('food_id', id);
+            const { error } = await supabaseClient.from('foods').delete().eq('id', id);
+
             if (!error) {
-                await loadFoods();
+                await fetchMenus();
             } else {
                 showAlert('ข้อผิดพลาด', 'ไม่สามารถลบเมนูได้: ' + error.message);
             }
         }
 
-        function showAlert(title, msg, icon = "⚠️") {
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function showAlert(title, message, icon = "⚠️") {
             document.getElementById('alertTitle').textContent = title;
-            document.getElementById('alertMessage').textContent = msg;
+            document.getElementById('alertMessage').textContent = message;
             document.getElementById('alertIcon').textContent = icon;
-            document.getElementById('alertModal').classList.remove('hidden');
+            openModal('alertModal');
         }
     </script>
 </body>

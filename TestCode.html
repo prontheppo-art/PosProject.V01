@@ -9,7 +9,6 @@
     <style>
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background: #f4f6f9; touch-action: pan-y; -webkit-text-size-adjust: 100%; }
         
-        /* ใช้ Grid จัด Layout ให้ Header, Middle, Footer ล็อกอยู่เต็มหน้าจอพอดี ไม่เลื่อนตกขอบ */
         .app-layout { display: grid; grid-template-rows: auto 1fr auto; height: 100dvh; max-width: 500px; margin: 0 auto; background: #fff; box-sizing: border-box; }
 
         .fixed-top-section { background: #fff; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; z-index: 10; }
@@ -35,14 +34,21 @@
         
         .popup-menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 60vh; overflow-y: auto; padding: 4px; }
         
-        .popup-menu-card { background: linear-gradient(135deg, #ff7e5f, #feb47b); color: white; padding: 14px 6px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.12); transition: transform 0.1s; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 65px; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+        .popup-menu-card { color: white; padding: 14px 6px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.12); transition: transform 0.1s; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 65px; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
         .popup-menu-card:active { transform: scale(0.95); }
+
+        .popup-menu-card:nth-child(5n+1) { background: linear-gradient(135deg, #ff7e5f, #feb47b); }
+        .popup-menu-card:nth-child(5n+2) { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .popup-menu-card:nth-child(5n+3) { background: linear-gradient(135deg, #43e97b, #38f9d7); }
+        .popup-menu-card:nth-child(5n+4) { background: linear-gradient(135deg, #fa709a, #fee140); }
+        .popup-menu-card:nth-child(5n+5) { background: linear-gradient(135deg, #667eea, #764ba2); }
+
+        .popup-add-card { background: linear-gradient(135deg, #94a3b8, #64748b) !important; border: 2px dashed #ffffff; }
     </style>
 </head>
 <body>
 
 <div class="app-layout">
-    <!-- ส่วนหัว (Header) -->
     <div class="fixed-top-section">
         <div class="mb-2">
             <button type="button" onclick="openGroupModal()" class="w-full bg-amber-50 text-amber-800 border border-amber-200 font-bold p-2.5 rounded-xl text-sm outline-none shadow-sm flex items-center justify-between">
@@ -70,7 +76,6 @@
         </div>
     </div>
 
-    <!-- ส่วนกลาง (Scrollable Content) -->
     <div class="scrollable-middle-section">
         <div class="text-xs font-bold text-gray-700 mb-0.5 px-1">📂 หมวดหมู่อาหาร (คลิกเพื่อเลือกเมนู):</div>
         <div class="category-grid" id="categoryGridContainer">
@@ -78,14 +83,16 @@
         </div>
 
         <div class="cart-preview-box">
-            <div class="font-bold text-green-700 text-xs mb-1.5">📋 รายการที่เลือกไว้แล้ว:</div>
+            <div class="flex justify-between items-center mb-1.5 px-1">
+                <div class="font-bold text-green-700 text-xs">📋 รายการที่เลือกไว้แล้ว</div>
+                <div id="cartTotalPrice" class="font-black text-red-600 text-xs">รวม 0.-</div>
+            </div>
             <div id="cartPreviewList" class="flex flex-col gap-1">
                 <span class="text-gray-400 text-xs">ยังไม่มีรายการในตะกร้า</span>
             </div>
         </div>
     </div>
 
-    <!-- ส่วนล่าง (Footer - ปุ่มกดจะถูกล็อกไว้ตรงนี้เสมอไม่ตกจอ) -->
     <div class="bottom-fixed-bar">
         <div class="flex gap-2">
             <a href="index.html" class="bg-white hover:bg-gray-50 text-slate-800 border border-gray-200 font-bold py-2.5 px-3 rounded-xl text-xs text-center transition flex-1 flex items-center justify-center shadow">🏠 กลับหน้าหลัก</a>
@@ -95,7 +102,7 @@
 </div>
 
 <!-- Modal: เลือกกลุ่มลูกค้า -->
-<div id="groupModal" class="custom-modal-overlay">
+<div id="groupModal" class="custom-modal-overlay" onclick="handleOutsideClick(event, 'groupModal')">
     <div class="custom-modal-box">
         <div class="flex justify-between items-center mb-3 pb-2 border-b">
             <div class="font-bold text-base text-slate-800 flex items-center gap-1.5"><span>👥</span> เลือกกลุ่มลูกค้า</div>
@@ -106,7 +113,7 @@
 </div>
 
 <!-- Modal: เลือกเมนูอาหารตามหมวดหมู่ -->
-<div id="menuListModal" class="custom-modal-overlay">
+<div id="menuListModal" class="custom-modal-overlay" onclick="handleOutsideClick(event, 'menuListModal')">
     <div class="custom-modal-box">
         <div class="flex justify-between items-center mb-3 pb-2 border-b">
             <h3 id="modalCategoryTitle" class="font-bold text-base text-slate-800">ชื่อหมวดหมู่</h3>
@@ -116,8 +123,30 @@
     </div>
 </div>
 
+<!-- Modal: เพิ่มเมนูอาหารใหม่ (พร้อมกำหนดราคาแต่ละกลุ่ม) -->
+<div id="addMenuModal" class="custom-modal-overlay" onclick="handleOutsideClick(event, 'addMenuModal')">
+    <div class="custom-modal-box" style="border-top-color: #27ae60;">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b">
+            <div class="font-bold text-base text-slate-800">➕ เพิ่มเมนูอาหารใหม่</div>
+            <button onclick="closeModal('addMenuModal')" class="text-gray-400 font-bold text-lg px-2">✕</button>
+        </div>
+        <div class="mb-3">
+            <span class="text-xs font-bold text-gray-700 block mb-1">ชื่อเมนูอาหาร:</span>
+            <input type="text" id="newMenuNameInput" placeholder="ระบุชื่อเมนู..." class="w-full p-2.5 border-2 border-slate-200 rounded-xl text-sm outline-none bg-slate-50 shadow-inner">
+        </div>
+        <div class="mb-4">
+            <span class="text-xs font-bold text-gray-700 block mb-1.5">💰 กำหนดราคาตามกลุ่มลูกค้า:</span>
+            <div id="newMenuPricesContainer" class="flex flex-col gap-2 max-h-40 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-200"></div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="closeModal('addMenuModal')" class="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-slate-700 rounded-xl font-bold text-xs transition">ยกเลิก</button>
+            <button onclick="confirmSaveNewMenu()" class="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-xs transition shadow">✓ บันทึกเมนู</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: รายละเอียดสินค้า จำนวน และหมายเหตุ -->
-<div id="itemDetailModal" class="custom-modal-overlay">
+<div id="itemDetailModal" class="custom-modal-overlay" onclick="handleOutsideClick(event, 'itemDetailModal')">
     <div class="custom-modal-box">
         <div class="flex items-center justify-between gap-3 mb-3.5 bg-blue-50/70 p-3 rounded-2xl border border-blue-100 shadow-sm">
             <div class="min-w-0 flex-1">
@@ -155,7 +184,7 @@
 </div>
 
 <!-- Modal: เลือกสถานที่จัดส่ง -->
-<div id="locationModal" class="custom-modal-overlay">
+<div id="locationModal" class="custom-modal-overlay" onclick="handleOutsideClick(event, 'locationModal')">
     <div class="custom-modal-box">
         <div class="flex justify-between items-center mb-3 pb-2 border-b">
             <div class="font-bold text-base text-slate-800">📍 เลือกสถานที่ส่ง</div>
@@ -166,13 +195,28 @@
 </div>
 
 <!-- Modal: เลือกโซน -->
-<div id="zoneModal" class="custom-modal-overlay">
+<div id="zoneModal" class="custom-modal-overlay" onclick="handleOutsideClick(event, 'zoneModal')">
     <div class="custom-modal-box">
         <div class="flex justify-between items-center mb-3 pb-2 border-b">
             <div class="font-bold text-base text-slate-800">🏢 เลือกโซน</div>
             <button onclick="closeModal('zoneModal')" class="text-gray-400 font-bold text-lg px-2">✕</button>
         </div>
         <div id="zoneOptionsContainer" class="popup-menu-grid"></div>
+    </div>
+</div>
+
+<!-- Modal: สำหรับเพิ่มข้อมูลใหม่ (สถานที่/โซน) แบบกำหนดเอง -->
+<div id="addInfoModal" class="custom-modal-overlay" onclick="handleOutsideClick(event, 'addInfoModal')">
+    <div class="custom-modal-box" style="border-top-color: #27ae60;">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b">
+            <div id="addInfoTitle" class="font-bold text-base text-slate-800">เพิ่มรายการใหม่</div>
+            <button onclick="closeModal('addInfoModal')" class="text-gray-400 font-bold text-lg px-2">✕</button>
+        </div>
+        <input type="text" id="newInfoInput" placeholder="กรอกชื่อ..." class="w-full p-3 border-2 border-slate-200 rounded-xl mb-5 text-sm outline-none focus:border-green-500 shadow-inner bg-slate-50">
+        <div class="flex gap-2">
+            <button onclick="closeModal('addInfoModal')" class="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-slate-700 rounded-xl font-bold text-xs transition">ยกเลิก</button>
+            <button id="saveNewInfoBtn" class="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-xs transition shadow">บันทึก</button>
+        </div>
     </div>
 </div>
 
@@ -195,10 +239,13 @@
 
     let allGroups = [];
     let allFoodItems = [];
+    let foodGroups = [];
     let priceMap = {};
     let allLocations = [];
     let allZones = [];
     let currentGroup = "";
+    let currentCategoryModalId = null;
+    let currentCategoryModalName = "";
     let selectedLocationId = "";
     let selectedZoneName = "";
     let cart = [];
@@ -233,9 +280,13 @@
                 checkTouristDeliveryVisibility();
             }
 
+            const { data: fgData } = await db.from('food_groups').select('*').order('name', { ascending: true });
+            if (fgData) foodGroups = fgData;
+
             const { data: foods } = await db.from('foods').select('*').order('name');
             const { data: prices } = await db.from('food_prices').select('*');
             
+            priceMap = {};
             if (prices) {
                 prices.forEach(p => {
                     if (!priceMap[p.food_id]) priceMap[p.food_id] = {};
@@ -255,9 +306,52 @@
 
             const { data: zoneData } = await db.from('zones').select('*').order('id');
             if (zoneData) allZones = zoneData;
+
+            checkAndAutoSelectDefaults();
         } catch (err) {
             console.error("Error loading data:", err);
         }
+    }
+
+    function checkAndAutoSelectDefaults() {
+        if (!selectedLocationId && allLocations.length > 0) {
+            if (allLocations.length === 1) {
+                selectedLocationId = String(allLocations[0].id);
+                document.getElementById('selectedLocationText').textContent = allLocations[0].name;
+            } else {
+                const savedLocId = localStorage.getItem('customerLocationId');
+                if (savedLocId && allLocations.some(l => String(l.id) === String(savedLocId))) {
+                    selectedLocationId = savedLocId;
+                    const loc = allLocations.find(l => String(l.id) === String(savedLocId));
+                    document.getElementById('selectedLocationText').textContent = loc ? loc.name : '-- เลือกสถานที่ --';
+                } else {
+                    document.getElementById('selectedLocationText').textContent = '-- เลือก --';
+                }
+            }
+        }
+
+        if (selectedLocationId) {
+            const filteredZones = allZones.filter(z => String(z.location_id) === String(selectedLocationId));
+            if (!selectedZoneName && filteredZones.length > 0) {
+                if (filteredZones.length === 1) {
+                    selectedZoneName = filteredZones[0].name;
+                    document.getElementById('selectedZoneText').textContent = filteredZones[0].name;
+                } else {
+                    const savedZone = localStorage.getItem('customerZone');
+                    if (savedZone && filteredZones.some(z => z.name === savedZone)) {
+                        selectedZoneName = savedZone;
+                        document.getElementById('selectedZoneText').textContent = savedZone;
+                    } else {
+                        document.getElementById('selectedZoneText').textContent = '-- เลือก --';
+                    }
+                }
+            }
+        } else {
+            if (!selectedZoneName) {
+                document.getElementById('selectedZoneText').textContent = '-- เลือก --';
+            }
+        }
+        saveDeliveryInfo();
     }
 
     async function loadPendingOrderToCart() {
@@ -299,13 +393,18 @@
 
     function renderCategoryGrid() {
         const container = document.getElementById('categoryGridContainer');
-        const categories = [...new Set(allFoodItems.map(f => f.category || 'อื่นๆ'))].sort();
         container.innerHTML = '';
-        categories.forEach(cat => {
+        
+        if (foodGroups.length === 0) {
+            container.innerHTML = `<div class="text-center col-span-2 text-gray-500 py-4 text-xs">ไม่พบหมวดหมู่สินค้า</div>`;
+            return;
+        }
+
+        foodGroups.forEach(cat => {
             const card = document.createElement('div');
             card.className = 'category-card';
-            card.textContent = `📁 ${cat}`;
-            card.onclick = () => openCategoryModal(cat);
+            card.textContent = `📁 ${cat.name}`;
+            card.onclick = () => openCategoryModal(cat.id, cat.name);
             container.appendChild(card);
         });
     }
@@ -333,11 +432,14 @@
         closeModal('groupModal');
     }
 
-    function openCategoryModal(categoryName) {
+    function openCategoryModal(categoryId, categoryName) {
+        currentCategoryModalId = categoryId;
+        currentCategoryModalName = categoryName;
         document.getElementById('modalCategoryTitle').textContent = `หมวดหมู่: ${categoryName}`;
         const container = document.getElementById('modalMenuItemsContainer');
         container.innerHTML = '';
-        const items = allFoodItems.filter(f => (f.category || 'อื่นๆ') === categoryName);
+        
+        const items = allFoodItems.filter(f => String(f.category_id) === String(categoryId));
         items.forEach(item => {
             const price = getFoodPrice(item.id);
             const card = document.createElement('div');
@@ -349,7 +451,85 @@
             };
             container.appendChild(card);
         });
+
+        const addCard = document.createElement('div');
+        addCard.className = 'popup-menu-card popup-add-card';
+        addCard.innerHTML = '<span>➕</span><span style="font-size:11px; margin-top:2px;">เพิ่มเมนู</span>';
+        addCard.onclick = () => {
+            openAddMenuModal();
+        };
+        container.appendChild(addCard);
+
         document.getElementById('menuListModal').classList.add('active');
+    }
+
+    function openAddMenuModal() {
+        document.getElementById('newMenuNameInput').value = '';
+        const container = document.getElementById('newMenuPricesContainer');
+        container.innerHTML = '';
+
+        allGroups.forEach(g => {
+            const cleanName = cleanGroupName(g.name);
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between gap-2 p-1 bg-white rounded-lg border border-slate-100 shadow-sm';
+            div.innerHTML = `
+                <span class="text-xs font-bold text-slate-700 pl-1">${cleanName}</span>
+                <input type="number" placeholder="ระบุราคา" data-group-id="${g.id}" class="new-menu-price-input w-28 p-1.5 border rounded-lg text-center text-xs font-bold bg-slate-50 text-blue-600 outline-none">
+            `;
+            container.appendChild(div);
+        });
+
+        document.getElementById('addMenuModal').classList.add('active');
+    }
+
+    async function confirmSaveNewMenu() {
+        const name = document.getElementById('newMenuNameInput').value.trim();
+        if (!name) {
+            alert('กรุณากรอกชื่อเมนูอาหาร');
+            return;
+        }
+
+        const priceInputs = document.querySelectorAll('.new-menu-price-input');
+        const pricesPayload = [];
+        priceInputs.forEach(input => {
+            const customerGroupId = input.getAttribute('data-group-id');
+            const priceVal = parseFloat(input.value) || 0;
+            pricesPayload.push({
+                customer_group_id: customerGroupId,
+                price: priceVal
+            });
+        });
+
+        try {
+            const { data: foodData, error: foodError } = await db.from('foods').insert([{
+                name: name,
+                category_id: currentCategoryModalId
+            }]).select();
+
+            if (foodError) throw foodError;
+
+            if (foodData && foodData.length > 0) {
+                const newFoodId = foodData[0].id;
+
+                const finalPricesToInsert = pricesPayload.map(p => ({
+                    food_id: newFoodId,
+                    customer_group_id: p.customer_group_id,
+                    price: p.price
+                }));
+
+                const { error: priceError } = await db.from('food_prices').insert(finalPricesToInsert);
+                if (priceError) throw priceError;
+
+                closeModal('addMenuModal');
+                closeModal('menuListModal');
+
+                await loadInitialData();
+                openCategoryModal(currentCategoryModalId, currentCategoryModalName);
+            }
+        } catch (err) {
+            console.error('Error adding new menu:', err);
+            alert('❌ ไม่สามารถเพิ่มเมนูได้: ' + err.message);
+        }
     }
 
     function getFoodPrice(foodId) {
@@ -418,9 +598,34 @@
         updateCartDisplay();
     }
 
+    function showAddInfoModal(title, onSave) {
+        document.getElementById('addInfoTitle').textContent = title;
+        document.getElementById('newInfoInput').value = '';
+        const saveBtn = document.getElementById('saveNewInfoBtn');
+        
+        const newSaveBtn = saveBtn.cloneNode(true);
+        saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+        
+        newSaveBtn.onclick = () => {
+            const val = document.getElementById('newInfoInput').value.trim();
+            if (val) {
+                onSave(val);
+                closeModal('addInfoModal');
+            } else {
+                alert('กรุณากรอกข้อมูลให้ถูกต้อง');
+            }
+        };
+        
+        document.getElementById('addInfoModal').classList.add('active');
+        setTimeout(() => {
+            document.getElementById('newInfoInput').focus();
+        }, 100);
+    }
+
     function openLocationModal() {
         const container = document.getElementById('locationOptionsContainer');
         container.innerHTML = '';
+        
         allLocations.forEach(l => {
             const card = document.createElement('div');
             card.className = 'popup-menu-card';
@@ -428,10 +633,40 @@
             card.onclick = () => {
                 selectedLocationId = String(l.id);
                 document.getElementById('selectedLocationText').textContent = l.name;
+                
+                selectedZoneName = "";
+                const filteredZones = allZones.filter(z => String(z.location_id) === String(selectedLocationId));
+                if (filteredZones.length === 1) {
+                    selectedZoneName = filteredZones[0].name;
+                    document.getElementById('selectedZoneText').textContent = filteredZones[0].name;
+                } else {
+                    document.getElementById('selectedZoneText').textContent = '-- เลือก --';
+                }
+                saveDeliveryInfo();
                 closeModal('locationModal');
             };
             container.appendChild(card);
         });
+
+        const addCard = document.createElement('div');
+        addCard.className = 'popup-menu-card popup-add-card';
+        addCard.innerHTML = '<span>➕</span><span style="font-size:11px; margin-top:2px;">เพิ่มสถานที่</span>';
+        addCard.onclick = () => {
+            showAddInfoModal('เพิ่มสถานที่ส่งใหม่', async (newLocName) => {
+                try {
+                    const { data, error } = await db.from('locations').insert([{ name: newLocName }]).select();
+                    if (error) throw error;
+                    if (data && data.length > 0) {
+                        allLocations.push(data[0]);
+                        openLocationModal();
+                    }
+                } catch (err) {
+                    alert('❌ ไม่สามารถเพิ่มสถานที่ได้: ' + err.message);
+                }
+            });
+        };
+        container.appendChild(addCard);
+
         document.getElementById('locationModal').classList.add('active');
     }
 
@@ -440,6 +675,7 @@
         const container = document.getElementById('zoneOptionsContainer');
         container.innerHTML = '';
         const filteredZones = allZones.filter(z => String(z.location_id) === String(selectedLocationId));
+        
         filteredZones.forEach(z => {
             const card = document.createElement('div');
             card.className = 'popup-menu-card';
@@ -447,10 +683,31 @@
             card.onclick = () => {
                 selectedZoneName = z.name;
                 document.getElementById('selectedZoneText').textContent = selectedZoneName;
+                saveDeliveryInfo();
                 closeModal('zoneModal');
             };
             container.appendChild(card);
         });
+
+        const addCard = document.createElement('div');
+        addCard.className = 'popup-menu-card popup-add-card';
+        addCard.innerHTML = '<span>➕</span><span style="font-size:11px; margin-top:2px;">เพิ่มโซน</span>';
+        addCard.onclick = () => {
+            showAddInfoModal('เพิ่มโซนใหม่สำหรับสถานที่นี้', async (newZoneName) => {
+                try {
+                    const { data, error } = await db.from('zones').insert([{ name: newZoneName, location_id: selectedLocationId }]).select();
+                    if (error) throw error;
+                    if (data && data.length > 0) {
+                        allZones.push(data[0]);
+                        openZoneModal();
+                    }
+                } catch (err) {
+                    alert('❌ ไม่สามารถเพิ่มโซนได้: ' + err.message);
+                }
+            });
+        };
+        container.appendChild(addCard);
+
         document.getElementById('zoneModal').classList.add('active');
     }
 
@@ -483,15 +740,26 @@
         document.getElementById(modalId).classList.remove('active');
     }
 
+    function handleOutsideClick(event, modalId) {
+        if (event.target === document.getElementById(modalId)) {
+            closeModal(modalId);
+        }
+    }
+
     function saveCart() {
         localStorage.setItem('restaurantCart', JSON.stringify(cart));
     }
 
     function updateCartDisplay() {
         const previewList = document.getElementById('cartPreviewList');
+        const totalPriceEl = document.getElementById('cartTotalPrice');
+        
         const totalItems = cart.length;
         const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
+        const totalPrice = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+
         document.getElementById('cartCountText').textContent = `${totalItems} รายการ | ${totalQty} ชิ้น`;
+        totalPriceEl.textContent = `รวม ${totalPrice}.-`;
 
         if (cart.length === 0) {
             previewList.innerHTML = `<span class="text-gray-400 text-xs">ยังไม่มีรายการในตะกร้า</span>`;
@@ -503,7 +771,6 @@
             const div = document.createElement('div');
             div.className = 'cart-preview-item';
             
-            // เพิ่มการแสดงผลหมายเหตุ (Comment) เป็นตัวหนังสือสีแดงต่อท้ายรายการ
             const noteHtml = item.note ? `<span class="text-red-600 ml-1">(${item.note})</span>` : '';
 
             div.innerHTML = `
