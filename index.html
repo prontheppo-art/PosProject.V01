@@ -38,29 +38,29 @@
 <body>
 
 <div class="app-layout shadow-xl">
-    <!-- ส่วนหัว ล็อกติดด้านบน พร้อมปรับขนาดไอคอนเพิ่ม 50% (จาก 12 เป็น 18) -->
+    <!-- ส่วนหัว ล็อกติดด้านบน ปรับความสูงไอคอนเพิ่มอีกเท่าตัว (จาก w-18 h-18 เป็น w-18 h-36 และโค้งมนแบบแคปซูลแนวตั้ง) -->
     <div class="w-full text-center pt-2 pb-4 flex flex-col items-center shrink-0 border-b border-gray-100 mb-4">
-        <div class="w-18 h-18 bg-blue-50 rounded-full flex items-center justify-center text-3xl mb-2 shadow-inner">🍽️</div>
+        <div class="w-18 h-36 bg-blue-50 rounded-full flex items-center justify-center text-4xl mb-2 shadow-inner">🍽️</div>
         <h1 class="font-extrabold text-sm text-slate-800 mb-0.5">ลาบหนองบัวลำภู @เขื่อนขุนด่านปราการชล</h1>
         <p class="text-[10px] text-gray-500 font-medium">ระบบจัดการร้านอาหารและสั่งอาหาร</p>
     </div>
 
-    <!-- ปุ่มเมนูต่างๆ -->
-    <div class="w-full space-y-2.5">
-        <button type="button" onclick="goToPage('TakeOrder.html')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
-            <span>📝</span> หน้าสั่งอาหาร
+    <!-- ปุ่มเมนูต่างๆ (ขยายตัวหนังสือเพิ่มขึ้น 25% จาก text-xs เป็น text-sm และปรับ Padding ให้รับกัน) -->
+    <div class="w-full space-y-3">
+        <button type="button" onclick="goToPage('TakeOrder.html')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer">
+            <span class="text-base">📝</span> หน้าสั่งอาหาร
         </button>
 
-        <a href="SalesReport.html" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer no-underline block text-center">
-            <span>📊</span> สรุปยอดขาย & ประวัติออร์เดอร์
+        <a href="SalesReport.html" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer no-underline block text-center">
+            <span class="text-base">📊</span> สรุปยอดขาย & ประวัติออร์เดอร์
         </a>
 
-        <button type="button" onclick="goToPage('inventory.html')" class="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
-            <span>📦</span> สต็อกสินค้าคงเหลือ (Inventory)
+        <button type="button" onclick="goToPage('inventory.html')" class="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer">
+            <span class="text-base">📦</span> สต็อกสินค้าคงเหลือ
         </button>
 
-        <button type="button" onclick="goToPage('PageAdmin.html')" class="w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
-            <span>🔒</span> เข้าสู่ระบบผู้ดูแลระบบ (โหมดพัฒนา)
+        <button type="button" onclick="goToPage('PageAdmin.html')" class="w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer">
+            <span class="text-base">🔒</span> ผู้ดูแลระบบ
         </button>
     </div>
 </div>
