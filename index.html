@@ -6,7 +6,6 @@
     <title>ลาบหนองบัวลำภู @เขื่อนขุนด่านปราการชล</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า ป้องกันการยืดหดของ viewport บนมือถือ */
         html, body { 
             height: 100%; 
             margin: 0; 
@@ -20,7 +19,6 @@
             user-select: none;
         }
 
-        /* จัดโครงสร้างให้อยู่กึ่งกลางหน้าจอพอดีและไม่หลุดเฟรม */
         .app-layout { 
             display: flex; 
             flex-direction: column; 
@@ -30,8 +28,8 @@
             margin: 0 auto; 
             background: #fff; 
             box-sizing: border-box; 
-            padding: 16px; 
-            justify-content: center; 
+            padding: 20px 16px; 
+            justify-content: flex-start; 
             align-items: center; 
             overflow: hidden;
         }
@@ -40,29 +38,27 @@
 <body>
 
 <div class="app-layout shadow-xl">
-    <div class="w-full text-center pt-1 pb-3 flex flex-col items-center shrink-0">
-        <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-xl mb-1.5 shadow-inner">🍽️</div>
+    <!-- ส่วนหัว ล็อกติดด้านบน พร้อมปรับขนาดไอคอนเพิ่ม 50% (จาก 12 เป็น 18) -->
+    <div class="w-full text-center pt-2 pb-4 flex flex-col items-center shrink-0 border-b border-gray-100 mb-4">
+        <div class="w-18 h-18 bg-blue-50 rounded-full flex items-center justify-center text-3xl mb-2 shadow-inner">🍽️</div>
         <h1 class="font-extrabold text-sm text-slate-800 mb-0.5">ลาบหนองบัวลำภู @เขื่อนขุนด่านปราการชล</h1>
         <p class="text-[10px] text-gray-500 font-medium">ระบบจัดการร้านอาหารและสั่งอาหาร</p>
     </div>
 
-    <div class="w-full space-y-2.5 mt-1">
-        <!-- 1. ปุ่ม หน้าสั่งอาหาร (ลิงก์ไป TakeOrder.html โดยตรง) -->
+    <!-- ปุ่มเมนูต่างๆ -->
+    <div class="w-full space-y-2.5">
         <button type="button" onclick="goToPage('TakeOrder.html')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
             <span>📝</span> หน้าสั่งอาหาร
         </button>
 
-        <!-- 2. ปุ่ม สรุปยอดขาย & ประวัติออร์เดอร์ -->
         <a href="SalesReport.html" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer no-underline block text-center">
             <span>📊</span> สรุปยอดขาย & ประวัติออร์เดอร์
         </a>
 
-        <!-- 3. ปุ่ม สต็อกสินค้าคงเหลือ (เปลี่ยนเป็น inventory.html) -->
         <button type="button" onclick="goToPage('inventory.html')" class="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
             <span>📦</span> สต็อกสินค้าคงเหลือ (Inventory)
         </button>
 
-        <!-- 4. ปุ่ม เข้าสู่ระบบผู้ดูแลระบบ -->
         <button type="button" onclick="goToPage('PageAdmin.html')" class="w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer">
             <span>🔒</span> เข้าสู่ระบบผู้ดูแลระบบ (โหมดพัฒนา)
         </button>
@@ -70,12 +66,10 @@
 </div>
 
 <script>
-    // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
     document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
     document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
 
-    // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function (event) {
         const now = (new Date()).getTime();
@@ -85,7 +79,6 @@
         lastTouchEnd = now;
     }, { passive: false });
 
-    // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
     document.addEventListener('touchstart', function (event) {
         if (event.touches.length > 1) {
             event.preventDefault();
