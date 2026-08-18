@@ -2,12 +2,13 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>สรุปรายการสั่งอาหาร - ตรวจสอบและยืนยัน</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="key.js"></script>
     <style>
+        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า ป้องกันการยืดหดของ viewport บนมือถือ */
         html, body { 
             height: 100%; 
             margin: 0; 
@@ -17,9 +18,11 @@
             background: #f4f6f9; 
             touch-action: pan-y; 
             -webkit-text-size-adjust: 100%;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
-        /* ล็อกหน้าจอด้วย Grid Layout: ส่วนบน(auto), ส่วนกลาง(1fr ขยายตามพื้นที่เหลือและให้สกอร์ในนี้), ส่วนล่าง(auto) */
+        /* จัดโครงสร้างด้วย Grid: แถวบนสุด(auto), แถวกลาง(1fr ขยายตามพื้นที่ที่เหลือและให้สกอร์เฉพาะตรงนี้), แถวล่างสุด(auto) */
         .app-layout { 
             display: grid; 
             grid-template-rows: auto 1fr auto; 
@@ -31,9 +34,16 @@
             overflow: hidden;
         }
 
-        .header-section { padding: 12px; background: #fff; border-bottom: 1px solid #e2e8f0; z-index: 10; flex-shrink: 0; }
+        /* ฟิกซ์หัวด้านบน */
+        .header-section { 
+            padding: 12px; 
+            background: #fff; 
+            border-bottom: 1px solid #e2e8f0; 
+            z-index: 10; 
+            flex-shrink: 0; 
+        }
         
-        /* ส่วนกลางที่เป็นพื้นที่แสดงรายการอาหาร ให้มี Scrollbar เฉพาะจุดนี้เท่านั้น */
+        /* พื้นที่ตรงกลาง: ให้สโครลเฉพาะในส่วนนี้เมื่อรายการอาหารเยอะ หัวกับท้ายจะนิ่งสนิท */
         .content-section { 
             padding: 12px; 
             overflow-y: auto; 
@@ -42,18 +52,28 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        .footer-section { padding: 12px; background: #fff; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px; z-index: 10; flex-shrink: 0; }
+        /* ฟิกซ์ท้ายด้านล่าง (ปุ่ม 2 ปุ่ม) ล็อกติดขอบล่างตลอดเวลา */
+        .footer-section { 
+            padding: 12px; 
+            background: #fff; 
+            border-top: 1px solid #e2e8f0; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            z-index: 10; 
+            flex-shrink: 0; 
+        }
     </style>
 </head>
 <body>
 
 <div class="app-layout">
-    <!-- ส่วนหัว (Header - ล็อกนิ่งอยู่ด้านบน) -->
+    <!-- ส่วนหัว (Header - ล็อกนิ่งด้านบน) -->
     <div class="header-section">
         <h1 class="font-bold text-base text-slate-800">📋 ตรวจสอบรายการออร์เดอร์</h1>
     </div>
 
-    <!-- ส่วนเนื้อหา (Content - เลื่อนเฉพาะในกรอบนี้เมื่อรายการอาหารเยอะ) -->
+    <!-- ส่วนเนื้อหา (Content - สโครลเลื่อนดูเฉพาะข้อมูลตารางอาหารตรงนี้) -->
     <div class="content-section">
         <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg mb-4 text-xs font-semibold text-amber-800 flex justify-between shrink-0">
             <span>กลุ่มลูกค้า: <span id="lblGroup" class="text-slate-900">-</span></span>
@@ -87,7 +107,7 @@
         </div>
     </div>
 
-    <!-- ส่วนล่าง (Footer - ล็อกติดขอบล่างตลอดเวลา มองเห็นปุ่มเสมอ) -->
+    <!-- ส่วนล่าง (Footer - ฟิกซ์ติดขอบล่างตลอดเวลา เห็นปุ่มแน่นอน) -->
     <div class="footer-section">
         <div class="flex gap-2">
             <a href="TakeOrder.html" class="bg-slate-500 text-white font-bold py-2.5 px-3 rounded-lg text-xs text-center hover:bg-slate-600 flex-1 flex items-center justify-center shadow">⬅️ สั่งอาหารเพิ่ม</a>
@@ -97,11 +117,12 @@
 </div>
 
 <script>
-    // ป้องกันการซูมหน้าจอด้วยนิ้ว
-    document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
-    document.addEventListener('gesturechange', function (e) { e.preventDefault(); });
-    document.addEventListener('gestureend', function (e) { e.preventDefault(); });
+    // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
 
+    // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function (event) {
         const now = (new Date()).getTime();
@@ -109,7 +130,14 @@
             event.preventDefault();
         }
         lastTouchEnd = now;
-    }, false);
+    }, { passive: false });
+
+    // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
+    document.addEventListener('touchstart', function (event) {
+        if (event.touches.length > 1) {
+            event.preventDefault();
+        }
+    }, { passive: false });
 
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let currentOrder = null;
