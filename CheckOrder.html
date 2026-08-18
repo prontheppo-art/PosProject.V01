@@ -294,7 +294,7 @@
             localStorage.setItem('lastCompletedOrder', JSON.stringify(orderItems));
             localStorage.setItem('orderRecordDate', currentOrder.order_date || new Date().toLocaleDateString('th-TH'));
 
-            window.location.href = 'print.html';
+            window.location.href = 'Print.html';
 
         } catch (err) {
             console.error('Confirmation Error:', err);
