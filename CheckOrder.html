@@ -2,39 +2,61 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>สรุปรายการสั่งอาหาร - ตรวจสอบและยืนยัน</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="key.js"></script>
     <style>
-        html, body { height: 100%; margin: 0; padding: 0; font-family: sans-serif; background: #f4f6f9; }
-        .app-layout { display: flex; flex-direction: column; min-height: 100vh; max-width: 500px; margin: 0 auto; background: #fff; box-sizing: border-box; }
-        .header-section { padding: 12px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-        .content-section { padding: 12px; flex-grow: 1; overflow-y: auto; }
-        .footer-section { padding: 12px; background: #fff; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px; }
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            font-family: sans-serif; 
+            background: #f4f6f9; 
+            touch-action: pan-y; 
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        /* ใช้ Grid จัด Layout ให้ Header, Content, และ Footer ล็อกติดหน้าจอมือถือพอดี ไม่ตกขอบ */
+        .app-layout { 
+            display: grid; 
+            grid-template-rows: auto 1fr auto; 
+            height: 100dvh; 
+            max-width: 500px; 
+            margin: 0 auto; 
+            background: #fff; 
+            box-sizing: border-box; 
+        }
+
+        .header-section { padding: 12px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .content-section { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; }
+        .footer-section { padding: 12px; background: #fff; border-top: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px; z-index: 10; }
     </style>
 </head>
 <body>
 
 <div class="app-layout">
+    <!-- ส่วนหัว (Header) -->
     <div class="header-section">
         <h1 class="font-bold text-base text-slate-800">📋 ตรวจสอบรายการออร์เดอร์</h1>
     </div>
 
+    <!-- ส่วนเนื้อหา (Content - เลื่อนได้) -->
     <div class="content-section">
-        <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg mb-4 text-xs font-semibold text-amber-800 flex justify-between">
+        <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg mb-4 text-xs font-semibold text-amber-800 flex justify-between shrink-0">
             <span>กลุ่มลูกค้า: <span id="lblGroup" class="text-slate-900">-</span></span>
             <span>วันที่สั่ง: <span id="lblDate" class="text-slate-900">-</span></span>
         </div>
 
-        <div id="deliveryInfoBox" class="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4 text-xs text-blue-900 hidden">
+        <div id="deliveryInfoBox" class="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4 text-xs text-blue-900 hidden shrink-0">
             <div class="font-bold mb-1">📍 ข้อมูลจัดส่ง:</div>
             <div>เบอร์โทร: <span id="lblPhone">-</span></div>
             <div>สถานที่: <span id="lblLocation">-</span> | โซน: <span id="lblZone">-</span></div>
         </div>
 
-        <div class="border rounded-lg overflow-hidden mb-4">
+        <div class="border rounded-lg overflow-hidden mb-4 shrink-0">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
                     <tr class="bg-slate-100 text-slate-700 border-b">
@@ -49,12 +71,13 @@
             </table>
         </div>
 
-        <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg flex justify-between items-center text-sm font-bold text-emerald-900">
+        <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg flex justify-between items-center text-sm font-bold text-emerald-900 shrink-0">
             <span id="summaryCountText">0 รายการ | 0 ชิ้น</span>
             <span>ราคารวมทั้งหมด: <span id="summaryTotalPrice" class="text-base text-emerald-700">0</span> บาท</span>
         </div>
     </div>
 
+    <!-- ส่วนล่าง (Footer - ปุ่มกด 2 ปุ่มถูกล็อกไว้ตรงนี้ เห็นแน่นอน) -->
     <div class="footer-section">
         <div class="flex gap-2">
             <a href="TakeOrder.html" class="bg-slate-500 text-white font-bold py-2.5 px-3 rounded-lg text-xs text-center hover:bg-slate-600 flex-1 flex items-center justify-center shadow">⬅️ สั่งอาหารเพิ่ม</a>
@@ -64,6 +87,20 @@
 </div>
 
 <script>
+    // ป้องกันการซูมหน้าจอด้วยนิ้ว (Gesture & Double Tap)
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+    document.addEventListener('gesturechange', function (e) { e.preventDefault(); });
+    document.addEventListener('gestureend', function (e) { e.preventDefault(); });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let currentOrder = null;
     let orderItems = [];
