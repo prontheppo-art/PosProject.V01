@@ -2,63 +2,92 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>จัดการสูตรอาหารและวัตถุดิบ (Food Mapping)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="key.js"></script>
+    <style>
+        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า ป้องกันการยืดหดของ viewport บนมือถือ */
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            font-family: sans-serif; 
+            background: #f3f4f6; /* bg-gray-100 */
+            touch-action: pan-y; 
+            -webkit-text-size-adjust: 100%;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* จัดโครงสร้างให้อยู่กึ่งกลางหน้าจอพอดีและไม่หลุดเฟรม */
+        .app-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100dvh;
+            width: 100vw;
+            box-sizing: border-box;
+            padding: 16px;
+            overflow: hidden;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans p-4 min-h-screen flex items-start justify-center">
+<body class="bg-gray-100">
 
-    <!-- กรอบหลัก Fix หน้าจอให้อยู่กับที่ (ความสูง 92vh) -->
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] flex flex-col relative">
-        
-        <!-- แถบหัวข้อด้านบน (เอาปุ่มดูสต็อกออกแล้ว เหลือแค่ชื่อหน้า) -->
-        <div class="shrink-0 bg-white pb-2 z-10 text-center">
-            <h2 class="text-base font-bold text-gray-800">🔗 จัดการสูตรอาหารและวัตถุดิบ</h2>
-        </div>
-
-        <hr class="border-gray-200 my-2 shrink-0">
-
-        <!-- ส่วนฟอร์มเพิ่ม/ผูกสูตรอาหาร (Fix ไม่ให้เลื่อนหลุด) -->
-        <div class="shrink-0 bg-white pb-3 space-y-3">
-            <div class="bg-blue-50 p-3 rounded-2xl border border-blue-100 space-y-2">
-                <h3 class="text-xs font-bold text-blue-800">➕ เพิ่ม/ผูกสูตรอาหารกับวัตถุดิบ</h3>
-                <div class="space-y-2">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-600 mb-0.5">วัตถุดิบ:</label>
-                        <select id="stockSelect" class="w-full p-2 border rounded-xl text-xs bg-white outline-none">
-                            <option value="">-- เลือกวัตถุดิบ --</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-600 mb-0.5">เมนูอาหาร:</label>
-                        <select id="foodSelect" class="w-full p-2 border rounded-xl text-xs bg-white outline-none">
-                            <option value="">-- เลือกเมนูอาหาร --</option>
-                        </select>
-                    </div>
-                </div>
-                <button onclick="addMapping()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow transition">
-                    + บันทึกการเชื่อมโยงสูตร
-                </button>
+    <div class="app-layout">
+        <!-- กรอบหลัก Fix หน้าจอให้อยู่กับที่ (ความสูง 92vh) -->
+        <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] flex flex-col relative overflow-hidden">
+            
+            <!-- แถบหัวข้อด้านบน (ล็อกนิ่ง) -->
+            <div class="shrink-0 bg-white pb-2 z-10 text-center">
+                <h2 class="text-base font-bold text-gray-800">🔗 จัดการสูตรอาหารและวัตถุดิบ</h2>
             </div>
-        </div>
 
-        <!-- หัวข้อตารางรายการ -->
-        <div class="shrink-0 pt-2 pb-1 bg-white">
-            <h3 class="text-xs font-bold text-gray-700">📋 รายการสูตรอาหารทั้งหมดในระบบ</h3>
-        </div>
+            <hr class="border-gray-200 my-2 shrink-0">
 
-        <!-- 📜 ส่วนตารางรายการที่จะให้ Scroll เลื่อนได้เฉพาะส่วนนี้ (Scroll Lock) -->
-        <div id="mappingList" class="overflow-y-auto pr-1 flex-1 content-start space-y-2 border border-gray-100 rounded-2xl p-2 bg-gray-50 mb-2">
-            <div class="text-center text-xs text-gray-400 py-4">กำลังโหลดข้อมูล...</div>
-        </div>
+            <!-- ส่วนฟอร์มเพิ่ม/ผูกสูตรอาหาร (ล็อกนิ่ง) -->
+            <div class="shrink-0 bg-white pb-3 space-y-3">
+                <div class="bg-blue-50 p-3 rounded-2xl border border-blue-100 space-y-2">
+                    <h3 class="text-xs font-bold text-blue-800">➕ เพิ่ม/ผูกสูตรอาหารกับวัตถุดิบ</h3>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 mb-0.5">วัตถุดิบ:</label>
+                            <select id="stockSelect" class="w-full p-2 border rounded-xl text-xs bg-white outline-none">
+                                <option value="">-- เลือกวัตถุดิบ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-600 mb-0.5">เมนูอาหาร:</label>
+                            <select id="foodSelect" class="w-full p-2 border rounded-xl text-xs bg-white outline-none">
+                                <option value="">-- เลือกเมนูอาหาร --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="addMapping()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow transition">
+                        + บันทึกการเชื่อมโยงสูตร
+                    </button>
+                </div>
+            </div>
 
-        <!-- ส่วนปุ่มควบคุมด้านล่างสุด (ย้ายปุ่มกลับแอดมินมาไว้ตรงนี้ตามลูกศรชี้) -->
-        <div class="shrink-0 pt-2 border-t border-gray-100 mt-auto">
-            <a href="PageAdmin.html" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs text-center transition flex items-center justify-center gap-1 shadow-xs block">
-                🔑 กลับผู้ดูแลระบบ
-            </a>
+            <!-- หัวข้อตารางรายการ (ล็อกนิ่ง) -->
+            <div class="shrink-0 pt-2 pb-1 bg-white">
+                <h3 class="text-xs font-bold text-gray-700">📋 รายการสูตรอาหารทั้งหมดในระบบ</h3>
+            </div>
+
+            <!-- 📜 ส่วนตารางรายการที่จะให้ Scroll เลื่อนได้เฉพาะส่วนนี้ (Scroll Lock) -->
+            <div id="mappingList" class="overflow-y-auto pr-1 flex-1 content-start space-y-2 border border-gray-100 rounded-2xl p-2 bg-gray-50 mb-2">
+                <div class="text-center text-xs text-gray-400 py-4">กำลังโหลดข้อมูล...</div>
+            </div>
+
+            <!-- ส่วนปุ่มควบคุมด้านล่างสุด (ล็อกติดขอบล่าง) -->
+            <div class="shrink-0 pt-2 border-t border-gray-100 mt-auto">
+                <a href="PageAdmin.html" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs text-center transition flex items-center justify-center gap-1 shadow-xs block">
+                    🔑 กลับผู้ดูแลระบบ
+                </a>
+            </div>
         </div>
     </div>
 
@@ -84,6 +113,28 @@
     </div>
 
     <script>
+        // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
+        document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+        document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+        document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+
+        // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
+        document.addEventListener('touchstart', function (event) {
+            if (event.touches.length > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         window.onload = async function() {

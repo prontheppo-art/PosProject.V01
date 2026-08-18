@@ -2,17 +2,44 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>ลาบหนองบัวลำภู @เขื่อนขุนด่านปราการชล</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background: #f4f6f9; }
-        .app-layout { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: 0 auto; background: #fff; box-sizing: border-box; padding: 12px 16px; justify-content: flex-start; align-items: center; }
+        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า ป้องกันการยืดหดของ viewport บนมือถือ */
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            font-family: sans-serif; 
+            background: #f4f6f9; 
+            touch-action: pan-y; 
+            -webkit-text-size-adjust: 100%;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* จัดโครงสร้างให้อยู่กึ่งกลางหน้าจอพอดีและไม่หลุดเฟรม */
+        .app-layout { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100dvh; 
+            max-width: 500px; 
+            width: 100vw;
+            margin: 0 auto; 
+            background: #fff; 
+            box-sizing: border-box; 
+            padding: 16px; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
 
-<div class="app-layout">
+<div class="app-layout shadow-xl">
     <div class="w-full text-center pt-1 pb-3 flex flex-col items-center shrink-0">
         <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-xl mb-1.5 shadow-inner">🍽️</div>
         <h1 class="font-extrabold text-sm text-slate-800 mb-0.5">ลาบหนองบัวลำภู @เขื่อนขุนด่านปราการชล</h1>
@@ -26,7 +53,7 @@
         </button>
 
         <!-- 2. ปุ่ม สรุปยอดขาย & ประวัติออร์เดอร์ -->
-        <a href="SalesReport.html" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer no-underline">
+        <a href="SalesReport.html" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs cursor-pointer no-underline block text-center">
             <span>📊</span> สรุปยอดขาย & ประวัติออร์เดอร์
         </a>
 
@@ -43,6 +70,28 @@
 </div>
 
 <script>
+    // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+    document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+
+    // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, { passive: false });
+
+    // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
+    document.addEventListener('touchstart', function (event) {
+        if (event.touches.length > 1) {
+            event.preventDefault();
+        }
+    }, { passive: false });
+
     function goToPage(url) {
         window.location.href = url;
     }

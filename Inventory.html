@@ -2,47 +2,99 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>ตรวจสอบสต็อกสินค้าคงเหลือ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า ป้องกันการยืดหดของ viewport บนมือถือ */
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            font-family: sans-serif; 
+            background: #f3f4f6; /* bg-gray-100 */
+            touch-action: pan-y; 
+            -webkit-text-size-adjust: 100%;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* จัดโครงสร้างให้อยู่กึ่งกลางหน้าจอพอดีและไม่หลุดเฟรม */
+        .app-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100dvh;
+            width: 100vw;
+            box-sizing: border-box;
+            padding: 16px;
+            overflow: hidden;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 p-4 font-sans min-h-screen flex items-start justify-center">
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] flex flex-col">
-        
-        <!-- ส่วนหัวด้านบน -->
-        <div class="shrink-0 bg-white pb-2 z-10">
-            <h2 class="text-xl font-bold text-amber-600 text-center mb-1">📦 สต็อกสินค้าคงเหลือ</h2>
-        </div>
+<body class="bg-gray-100">
 
-        <hr class="border-gray-200 my-2 shrink-0">
-
-        <div class="flex justify-between items-center text-xs font-bold text-gray-700 mb-2 px-1 shrink-0">
-            <span>รายการสินค้า</span>
-            <span>คงเหลือ (หน่วย)</span>
-        </div>
-        
-        <!-- รายการสินค้า -->
-        <div id="stockListContainer" class="space-y-2.5 overflow-y-auto pr-1 flex-1 content-start mb-2">
-            <div class="text-center text-gray-400 text-xs py-4">⏳ กำลังโหลดข้อมูลสต็อก...</div>
-        </div>
-
-        <!-- ส่วนปุ่มควบคุมย้ายมาไว้ด้านล่าง -->
-        <div class="shrink-0 pt-2 border-t border-gray-100 mt-auto">
-            <div class="grid grid-cols-2 gap-2">
-                <a href="index.html" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs text-center transition flex items-center justify-center gap-1 shadow-xs">
-                    🏠 หน้าหลัก
-                </a>
-                <button onclick="loadStockData()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-sm">
-                    🔄 รีเฟรช
-                </button>
+    <div class="app-layout">
+        <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 h-[92vh] flex flex-col relative overflow-hidden">
+            
+            <!-- ส่วนหัวด้านบน (ล็อกนิ่ง) -->
+            <div class="shrink-0 bg-white pb-2 z-10">
+                <h2 class="text-xl font-bold text-amber-600 text-center mb-1">📦 สต็อกสินค้าคงเหลือ</h2>
             </div>
+
+            <hr class="border-gray-200 my-2 shrink-0">
+
+            <div class="flex justify-between items-center text-xs font-bold text-gray-700 mb-2 px-1 shrink-0">
+                <span>รายการสินค้า</span>
+                <span>คงเหลือ (หน่วย)</span>
+            </div>
+            
+            <!-- รายการสินค้า (ให้สโครลเฉพาะพื้นที่ส่วนนี้) -->
+            <div id="stockListContainer" class="space-y-2.5 overflow-y-auto pr-1 flex-1 content-start mb-2">
+                <div class="text-center text-gray-400 text-xs py-4">⏳ กำลังโหลดข้อมูลสต็อก...</div>
+            </div>
+
+            <!-- ส่วนปุ่มควบคุมด้านล่างสุด (ล็อกติดขอบล่าง) -->
+            <div class="shrink-0 pt-2 border-t border-gray-100 mt-auto">
+                <div class="grid grid-cols-2 gap-2">
+                    <a href="index.html" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs text-center transition flex items-center justify-center gap-1 shadow-xs no-underline">
+                        🏠 หน้าหลัก
+                    </a>
+                    <button onclick="loadStockData()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                        🔄 รีเฟรช
+                    </button>
+                </div>
+            </div>
+            
         </div>
-        
     </div>
 
     <script src="key.js"></script>
     <script>
+        // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
+        document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+        document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+        document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+
+        // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
+        document.addEventListener('touchstart', function (event) {
+            if (event.touches.length > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         window.addEventListener('DOMContentLoaded', async () => {

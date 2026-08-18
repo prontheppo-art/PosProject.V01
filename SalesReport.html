@@ -2,11 +2,24 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>สรุปยอดขาย</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า */
+        html, body { 
+            height: 100%; margin: 0; padding: 0; overflow: hidden; 
+            font-family: sans-serif; background: #f3f4f6; 
+            touch-action: pan-y; 
+            -webkit-user-select: none; user-select: none;
+        }
+
+        .app-layout { 
+            display: flex; align-items: center; justify-content: center; 
+            height: 100dvh; width: 100vw; padding: 16px; box-sizing: border-box; 
+        }
+
         .cal-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
         .cal-modal.active { opacity: 1; pointer-events: auto; }
         .cal-box { background: white; width: 90%; max-width: 320px; border-radius: 24px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transform: scale(0.95); transition: transform 0.2s ease; }
@@ -21,55 +34,62 @@
         .cal-day.empty { pointer-events: none; }
     </style>
 </head>
-<body class="bg-gray-100 p-4 font-sans h-screen overflow-hidden flex justify-center items-center">
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 flex flex-col h-[92vh] box-border">
-        
-        <div class="flex-none bg-white z-10 pb-2">
-            <div class="text-center mb-3 pt-1">
-                <h2 class="text-lg font-bold text-gray-800">สรุปยอดขาย</h2>
-                <p class="text-[11px] text-gray-400 mt-0.5">รายการสั่งอาหารและจัดการออร์เดอร์</p>
-            </div>
+<body class="bg-gray-100">
 
-            <div class="bg-gray-100 p-1 rounded-2xl grid grid-cols-4 gap-1">
-                <button onclick="filterOrders('today', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn">วันนี้</button>
-                <button onclick="filterOrders('week', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn">สัปดาห์นี้</button>
-                <button onclick="filterOrders('month', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn">เดือนนี้</button>
-                
-                <button onclick="openCustomCalendar()" id="dateFilterBtn" class="py-1.5 text-[11px] font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn bg-transparent flex items-center justify-center truncate px-1">
-                    <span id="dateButtonText">📅 เลือกวัน</span>
-                </button>
-            </div>
-        </div>
-
-        <div id="orderHistoryList" class="flex-1 overflow-y-auto space-y-1.5 pr-1 mt-1">
-            <div class="text-center text-gray-400 text-xs py-10">⏳ กำลังโหลดข้อมูลประวัติ...</div>
-        </div>
-
-        <div class="flex-none pt-2 bg-white z-10 border-t border-gray-100 mt-2">
-            <div class="flex items-center gap-2">
-                <div class="flex-1 bg-slate-800 text-white rounded-2xl px-3.5 py-2.5 flex justify-between items-center shadow-md">
-                    <div>
-                        <div id="summaryLabel" class="text-[10px] text-slate-300 font-bold">ยอดรวมทั้งหมด</div>
-                        <div class="text-[8px] text-slate-400">จากออร์เดอร์ที่แสดง</div>
-                    </div>
-                    <div class="text-right">
-                        <span id="summaryTotalAmount" class="text-sm font-extrabold text-emerald-400">0 ฿</span>
-                    </div>
+    <div class="app-layout">
+        <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 flex flex-col h-[92vh] box-border relative overflow-hidden">
+            
+            <!-- ส่วนหัว (ล็อกนิ่ง) -->
+            <div class="flex-none bg-white z-10 pb-2">
+                <div class="text-center mb-3 pt-1">
+                    <h2 class="text-lg font-bold text-gray-800">สรุปยอดขาย</h2>
+                    <p class="text-[11px] text-gray-400 mt-0.5">รายการสั่งอาหารและจัดการออร์เดอร์</p>
                 </div>
 
-                <a href="index.html" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-3 rounded-2xl text-xs text-center transition flex items-center justify-center gap-1 shadow-sm shrink-0">
-                    🏠 หน้าหลัก
-                </a>
+                <div class="bg-gray-100 p-1 rounded-2xl grid grid-cols-4 gap-1">
+                    <button onclick="filterOrders('today', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn cursor-pointer">วันนี้</button>
+                    <button onclick="filterOrders('week', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn cursor-pointer">สัปดาห์นี้</button>
+                    <button onclick="filterOrders('month', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn cursor-pointer">เดือนนี้</button>
+                    
+                    <button onclick="openCustomCalendar()" id="dateFilterBtn" class="py-1.5 text-[11px] font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn bg-transparent flex items-center justify-center truncate px-1 cursor-pointer">
+                        <span id="dateButtonText">📅 เลือกวัน</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ส่วนรายการประวัติออร์เดอร์ (Scroll ได้เฉพาะส่วนนี้) -->
+            <div id="orderHistoryList" class="flex-1 overflow-y-auto space-y-1.5 pr-1 mt-1">
+                <div class="text-center text-gray-400 text-xs py-10">⏳ กำลังโหลดข้อมูลประวัติ...</div>
+            </div>
+
+            <!-- ส่วนสรุปยอดและปุ่มด้านล่าง (ล็อกติดขอบล่าง) -->
+            <div class="flex-none pt-2 bg-white z-10 border-t border-gray-100 mt-2">
+                <div class="flex items-center gap-2">
+                    <div class="flex-1 bg-slate-800 text-white rounded-2xl px-3.5 py-2 flex justify-between items-center shadow-md">
+                        <div>
+                            <div id="summaryLabel" class="text-[10px] text-slate-300 font-bold">ยอดรวมทั้งหมด</div>
+                            <div class="text-[8px] text-slate-400">จากออร์เดอร์ที่แสดง</div>
+                        </div>
+                        <div class="text-right">
+                            <span id="summaryTotalAmount" class="text-sm font-extrabold text-emerald-400">0 ฿</span>
+                        </div>
+                    </div>
+
+                    <a href="index.html" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2.5 rounded-2xl text-xs text-center transition flex items-center justify-center gap-1 shadow-sm shrink-0 no-underline">
+                        🏠 หน้าหลัก
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- ปฏิทินเลือกวัน -->
     <div id="customCalendarModal" class="cal-modal">
         <div class="cal-box">
             <div class="flex justify-between items-center mb-3">
-                <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 flex items-center justify-center">‹</button>
+                <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 flex items-center justify-center cursor-pointer">‹</button>
                 <h3 id="calMonthYear" class="font-bold text-sm text-gray-800">สิงหาคม 2026</h3>
-                <button onclick="changeMonth(1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 flex items-center justify-center">›</button>
+                <button onclick="changeMonth(1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 flex items-center justify-center cursor-pointer">›</button>
             </div>
             
             <div class="cal-grid mb-2">
@@ -85,25 +105,34 @@
             <div id="calDaysContainer" class="cal-grid mb-4"></div>
 
             <div class="grid grid-cols-2 gap-2">
-                <button onclick="selectToday()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold py-2.5 rounded-xl text-xs transition">📅 วันนี้</button>
-                <button onclick="closeCustomCalendar()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition">ยกเลิก</button>
+                <button onclick="selectToday()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">📅 วันนี้</button>
+                <button onclick="closeCustomCalendar()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">ยกเลิก</button>
             </div>
         </div>
     </div>
 
-    <div id="detailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-200">
+    <!-- โมดอลรายละเอียดออร์เดอร์ -->
+    <div id="detailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-200 p-4">
         <div class="bg-white w-[90%] max-w-[340px] rounded-2xl p-5 shadow-2xl transform scale-95 transition-transform duration-200" id="detailBox">
             <div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-3">
                 <h3 class="text-sm font-bold text-gray-800">📋 รายละเอียดออร์เดอร์</h3>
-                <button onclick="closeDetailModal()" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-xs">✕</button>
+                <button onclick="closeDetailModal()" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-xs cursor-pointer">✕</button>
             </div>
             <div id="detailContent" class="space-y-1.5 max-h-60 overflow-y-auto text-xs text-gray-600 mb-4 pr-1"></div>
-            <button onclick="closeDetailModal()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 rounded-xl text-xs transition">ปิดหน้าต่าง</button>
+            <button onclick="closeDetailModal()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">ปิดหน้าต่าง</button>
         </div>
     </div>
 
     <script src="key.js"></script>
     <script>
+        // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
+        document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+        document.addEventListener('touchend', (e) => {
+            const now = new Date().getTime();
+            if (now - window.lastTouchEnd <= 300) e.preventDefault();
+            window.lastTouchEnd = now;
+        }, { passive: false });
+
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let allOrders = [];
@@ -119,6 +148,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
+            window.lastTouchEnd = 0;
             await fetchOrdersFromDatabase();
         });
 
@@ -292,17 +322,15 @@
                 const totalAmount = getOrderTotalAmount(order).toLocaleString();
                 
                 return `
-                    <div class="bg-white py-2 px-1 border-b border-gray-100">
-                        <div class="flex justify-between items-center text-xs">
-                            <div class="flex items-center gap-2 overflow-hidden">
-                                <span class="font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-xs shrink-0">${customerGroup}</span>
-                                <span class="font-extrabold text-red-600 text-sm shrink-0">${totalAmount} ฿</span>
-                                <span class="text-[11px] text-gray-400 truncate">(${dateStr})</span>
-                            </div>
-                            <button onclick="openDetailModal(${order.id})" class="text-blue-600 hover:text-blue-800 font-bold text-xs px-2 py-1 transition shrink-0">
-                                Detail
-                            </button>
+                    <div class="bg-white py-2 px-1 border-b border-gray-100 flex justify-between items-center">
+                        <div class="flex items-center gap-2 overflow-hidden pr-2">
+                            <span class="font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-xs shrink-0">${customerGroup}</span>
+                            <span class="font-extrabold text-red-600 text-sm shrink-0">${totalAmount} ฿</span>
+                            <span class="text-[11px] text-gray-400 truncate">(${dateStr})</span>
                         </div>
+                        <button onclick="openDetailModal(${order.id})" class="text-blue-600 hover:text-blue-800 font-bold text-xs px-2 py-1 transition shrink-0 cursor-pointer">
+                            Detail
+                        </button>
                     </div>
                 `;
             }).join('');

@@ -2,57 +2,83 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
     <title>ผู้ดูแลระบบ - ลาบหนองบัวลำภู</title>
     <style>
+        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า ป้องกันการยืดหดของ viewport บนมือถือ */
         html, body {
             height: 100%;
             margin: 0;
             padding: 0;
+            overflow: hidden;
             font-family: sans-serif;
-            background: transparent;
+            background: #f3f4f6;
+            touch-action: pan-y;
+            -webkit-text-size-adjust: 100%;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* จัดโครงสร้างให้ชิดด้านบน (Top-aligned) และอยู่กึ่งกลางในแนวนอน */
+        .app-layout {
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: flex-start;
+            height: 100dvh;
+            width: 100vw;
+            box-sizing: border-box;
+            padding: 12px 16px;
+            overflow: hidden;
         }
 
         .main-card {
             background: #ffffff;
-            width: 96%;
+            width: 100%;
             max-width: 500px;
+            height: 96vh;
             border-radius: 24px;
-            padding: 30px 20px;
+            padding: 20px 16px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
             align-items: center;
             box-sizing: border-box;
             text-align: center;
+            overflow: hidden;
+        }
+
+        .header-section {
+            flex-shrink: 0;
         }
 
         .icon-top {
-            font-size: 40px;
-            margin-bottom: 12px;
-        }
-
-        .store-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #1e293b;
+            font-size: 32px;
             margin-bottom: 6px;
         }
 
-        .store-subtitle {
-            font-size: 13px;
-            color: #64748b;
-            margin-bottom: 28px;
+        .store-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 2px;
         }
 
+        .store-subtitle {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+
+        /* ส่วนรายการเมนู ให้สามารถเลื่อน (Scroll) เฉพาะส่วนนี้ได้หากหน้าจอเล็กเกินไป */
         .menu-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 2px;
+            content-start: top;
         }
 
         .menu-btn {
@@ -60,10 +86,10 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            height: 52px;
+            height: 48px;
             padding: 0 16px;
             border-radius: 12px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             color: white;
             text-decoration: none;
@@ -71,6 +97,7 @@
             transition: transform 0.1s ease;
             box-sizing: border-box;
             width: 100%;
+            flex-shrink: 0;
         }
 
         .menu-btn:active {
@@ -87,38 +114,65 @@
 </head>
 <body>
 
-    <div class="main-card">
-        <div class="icon-top">🔓</div>
-        <div class="store-title">ผู้ดูแลระบบ</div>
-        <div class="store-subtitle">จัดการระบบร้านอาหารและตรวจสอบยอดขาย</div>
+    <div class="app-layout">
+        <div class="main-card">
+            <div class="header-section">
+                <div class="icon-top">🔓</div>
+                <div class="store-title">ผู้ดูแลระบบ</div>
+                <div class="store-subtitle">จัดการระบบร้านอาหารและตรวจสอบยอดขาย</div>
+            </div>
 
-        <div class="menu-list">
-            <!-- 1. AddFood -->
-            <a href="AddFood.html" class="menu-btn btn-food">
-                <span>🍲 จัดการเมนูอาหาร & หมวดหมู่ (AddFood)</span>
-            </a>
-            <!-- 2. EditFood -->
-            <a href="EditFood.html" class="menu-btn btn-price">
-                <span>📋 ดูแลและแก้ไขตารางราคา (EditFood)</span>
-            </a>
-            <!-- 3. Stock Management -->
-            <a href="stockmanagement.html" class="menu-btn btn-stock-init">
-                <span>📦 การจัดการสต็อกสินค้า (Stock Management)</span>
-            </a>
-            <!-- 4. foodmapping -->
-            <a href="foodmapping.html" class="menu-btn btn-mapping">
-                <span>🔗 จัดการสูตรอาหาร & วัตถุดิบ (foodmapping)</span>
-            </a>
-            <!-- 5. changepwd -->
-            <a href="changepwd.html" class="menu-btn btn-password">
-                <span>🔑 เปลี่ยนรหัสผ่านแอดมิน (changepwd)</span>
-            </a>
-            <!-- 6. index -->
-            <a href="index.html" class="menu-btn btn-home">
-                <span>🏠 กลับหน้าหลัก (index)</span>
-            </a>
+            <div class="menu-list">
+                <!-- 1. AddFood -->
+                <a href="AddFood.html" class="menu-btn btn-food">
+                    <span>🍲 จัดการเมนูอาหาร & หมวดหมู่ (AddFood)</span>
+                </a>
+                <!-- 2. EditFood -->
+                <a href="EditFood.html" class="menu-btn btn-price">
+                    <span>📋 ดูแลและแก้ไขตารางราคา (EditFood)</span>
+                </a>
+                <!-- 3. Stock Management -->
+                <a href="stockmanagement.html" class="menu-btn btn-stock-init">
+                    <span>📦 การจัดการสต็อกสินค้า (Stock Management)</span>
+                </a>
+                <!-- 4. foodmapping -->
+                <a href="foodmapping.html" class="menu-btn btn-mapping">
+                    <span>🔗 จัดการสูตรอาหาร & วัตถุดิบ (foodmapping)</span>
+                </a>
+                <!-- 5. changepwd -->
+                <a href="changepwd.html" class="menu-btn btn-password">
+                    <span>🔑 เปลี่ยนรหัสผ่านแอดมิน (changepwd)</span>
+                </a>
+                <!-- 6. index -->
+                <a href="index.html" class="menu-btn btn-home">
+                    <span>🏠 กลับหน้าหลัก (index)</span>
+                </a>
+            </div>
         </div>
     </div>
 
+    <script>
+        // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
+        document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+        document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+        document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+
+        // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
+        document.addEventListener('touchstart', function (event) {
+            if (event.touches.length > 1) {
+                event.preventDefault();
+            }
+        }, { passive: false });
+    </script>
 </body>
 </html>
