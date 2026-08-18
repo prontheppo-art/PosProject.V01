@@ -85,7 +85,6 @@
     </div>
 </div>
 
-<!-- Modal เลือกกลุ่มลูกค้า -->
 <div id="groupModal" class="custom-modal-overlay">
     <div class="custom-modal-box">
         <div class="flex justify-between items-center mb-3 pb-2 border-b">
@@ -96,7 +95,6 @@
     </div>
 </div>
 
-<!-- Modal รายการเมนูย่อย -->
 <div id="menuListModal" class="custom-modal-overlay">
     <div class="custom-modal-box">
         <div class="flex justify-between items-center mb-3 pb-2 border-b">
@@ -107,7 +105,6 @@
     </div>
 </div>
 
-<!-- Modal รายละเอียดเมนู -->
 <div id="itemDetailModal" class="custom-modal-overlay">
     <div class="custom-modal-box">
         <div class="flex items-center justify-between gap-3 mb-3.5 bg-blue-50/70 p-3 rounded-2xl border border-blue-100 shadow-sm">
@@ -145,7 +142,6 @@
     </div>
 </div>
 
-<!-- Modal เลือกสถานที่ -->
 <div id="locationModal" class="custom-modal-overlay">
     <div class="custom-modal-box">
         <div class="flex justify-between items-center mb-3 pb-2 border-b">
@@ -156,7 +152,6 @@
     </div>
 </div>
 
-<!-- Modal เลือกโซน -->
 <div id="zoneModal" class="custom-modal-overlay">
     <div class="custom-modal-box">
         <div class="flex justify-between items-center mb-3 pb-2 border-b">
@@ -442,6 +437,19 @@
 
     function loadSavedDeliveryInfo() {
         document.getElementById('phoneInput').value = localStorage.getItem('customerPhone') || '';
+        
+        const savedLocId = localStorage.getItem('customerLocationId');
+        const savedLocName = localStorage.getItem('customerLocation');
+        if (savedLocId && savedLocName) {
+            selectedLocationId = savedLocId;
+            document.getElementById('selectedLocationText').textContent = savedLocName;
+        }
+
+        const savedZone = localStorage.getItem('customerZone');
+        if (savedZone) {
+            selectedZoneName = savedZone;
+            document.getElementById('selectedZoneText').textContent = savedZone;
+        }
     }
 
     function closeModal(modalId) {
@@ -546,4 +554,3 @@
 </script>
 </body>
 </html>
-    
