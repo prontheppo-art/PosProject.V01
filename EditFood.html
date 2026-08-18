@@ -62,7 +62,7 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             const [ { data: mData }, { data: gData }, { data: pData } ] = await Promise.all([
-                db.from('foods').select('*').order('name', { ascending: true }),
+                db.from('foods').select('*'),
                 db.from('customer_groups').select('*').order('id', { ascending: true }),
                 db.from('food_prices').select('*')
             ]);
@@ -83,8 +83,8 @@
         });
 
         function updateCategoriesListFromMenus() {
-            const uniqueCategories = [...new Set(menus.map(m => m.category).filter(Boolean))];
-            categoriesList = uniqueCategories.sort();
+            const uniqueCategories = [...new Set(menus.map(m => (m.category || '').trim()).filter(Boolean))];
+            categoriesList = uniqueCategories.sort((a, b) => a.localeCompare(b, 'th', { sensitivity: 'base' }));
 
             renderCategoryDropdownPopup();
             renderMenuTables();
@@ -143,8 +143,12 @@
             }
 
             const catMenus = menus
-                .filter(m => m.category === targetCategory)
-                .sort((a, b) => a.name.localeCompare(b.name, 'th'));
+                .filter(m => (m.category || '').trim() === targetCategory)
+                .sort((a, b) => {
+                    const nameA = (a.name || '').trim();
+                    const nameB = (b.name || '').trim();
+                    return nameA.localeCompare(nameB, 'th', { sensitivity: 'base', numeric: true });
+                });
 
             if (catMenus.length === 0) {
                 container.innerHTML = `<div class="text-center text-gray-400 text-xs py-4">ไม่พบข้อมูลอาหารในหมวดหมู่นี้</div>`;
