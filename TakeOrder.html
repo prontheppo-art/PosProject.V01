@@ -2,12 +2,21 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>รับออร์เดอร์จากลูกค้า</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background: #f4f6f9; }
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            font-family: sans-serif; 
+            background: #f4f6f9; 
+            touch-action: pan-y; /* บล็อกการซูม แต่ยังให้เลื่อนขึ้นลงได้ */
+            -webkit-text-size-adjust: 100%;
+        }
         .app-layout { display: flex; flex-direction: column; height: 100vh; max-width: 500px; margin: 0 auto; background: #fff; box-sizing: border-box; }
         .fixed-top-section { flex-shrink: 0; background: #fff; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; z-index: 10; }
         .scrollable-middle-section { flex-grow: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -164,6 +173,19 @@
 
 <script src="key.js"></script>
 <script>
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+    document.addEventListener('gesturechange', function (e) { e.preventDefault(); });
+    document.addEventListener('gestureend', function (e) { e.preventDefault(); });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allGroups = [];
