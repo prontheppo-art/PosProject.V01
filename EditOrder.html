@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ตรวจสอบและแก้ไขบิล</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f3f4f6; margin: 0; font-family: sans-serif; }
+        .app-layout { display: flex; flex-direction: column; height: 100vh; max-width: 480px; margin: 0 auto; background: #ffffff; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        .fixed-top-section { padding: 12px; background: #fff; border-bottom: 1px solid #e5e7eb; z-index: 10; }
+        .scrollable-middle-section { flex: 1; overflow-y: auto; padding: 12px; background: #f9fafb; }
+        .bottom-fixed-bar { padding: 12px; background: #fff; border-top: 1px solid #e5e7eb; z-index: 10; }
+        .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+        .category-card { background: #ffffff; border: 2px solid #e5e7eb; border-radius: 12px; padding: 10px; text-align: center; font-weight: bold; font-size: 12px; color: #374151; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .category-card:hover { border-color: #f59e0b; background: #fffbeb; color: #b45309; }
+        .custom-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+        .custom-modal-box { background: #fff; border-radius: 24px; padding: 20px; width: 100%; max-width: 360px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border-top: 4px solid #f59e0b; }
+        .popup-menu-grid { display: flex; flex-direction: column; gap: 8px; }
+        .popup-item-btn { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px 14px; text-align: left; font-weight: bold; font-size: 13px; color: #1f2937; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+        .popup-item-btn:hover { background: #fffbeb; border-color: #f59e0b; }
+    </style>
+</head>
+<body>
+
+<div class="app-layout">
+    <!-- ส่วนหัว: เลือกบิลที่ต้องการตรวจสอบ -->
+    <div class="fixed-top-section">
+        <h2 class="text-sm font-extrabold text-gray-800 mb-2">🔍 ตรวจสอบและแก้ไขบิล</h2>
+        <select id="billDropdown" onchange="showOrderDetails()" class="w-full p-3 border-2 border-amber-400 rounded-2xl text-xs font-bold text-gray-700 bg-amber-50 outline-none shadow-sm">
+            <option value="">-- เลือกบิลที่ต้องการตรวจสอบ --</option>
+        </select>
+    </div>
+
+    <!-- ส่วนกลาง: แสดงรายการสินค้าในบิล -->
+    <div class="scrollable-middle-section">
+        <div id="orderDetails" class="hidden flex flex-col space-y-3">
+            <div class="flex justify-between items-center border-b pb-2 px-1">
+                <h3 class="text-xs font-bold text-gray-700">📋 รายการอาหารในบิลนี้ (คลิกที่รายการเพื่อแก้ไข):</h3>
+                <span id="orderTotal" class="text-xs font-black text-emerald-600">ยอดรวม: 0 บาท</span>
+            </div>
+            <div id="itemsList" class="space-y-2"></div>
+        </div>
+        <div id="noOrderMessage" class="text-center text-gray-400 text-xs py-10">
+            โปรดเลือกบิลด้านบนเพื่อดูและแก้ไขรายการ
+        </div>
+    </div>
+
+    <!-- ส่วนท้าย: ปุ่มบันทึก -->
+    <div class="bottom-fixed-bar hidden" id="saveBar">
+        <button onclick="saveOrderChanges()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-md text-xs transition">💾 บันทึกการเปลี่ยนแปลงทั้งหมด</button>
+    </div>
+</div>
+
+<!-- Modal: หน้าต่างแก้ไขรายการอาหาร (จำลองสไตล์เลือกเมนู) -->
+<div id="editModal" class="custom-modal-overlay" onclick="handleOutsideClick(event, 'editModal')">
+    <div class="custom-modal-box">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b">
+            <h3 class="font-bold text-sm text-slate-800">✏️ แก้ไขรายการอาหาร</h3>
+            <button onclick="closeModal('editModal')" class="text-gray-400 font-bold text-lg px-2">✕</button>
+        </div>
+
+        <!-- รายการเดิม -->
+        <div class="bg-amber-50 p-2.5 rounded-xl border border-amber-200 mb-3">
+            <span class="text-[10px] font-bold text-amber-800 block mb-0.5">📌 รายการเดิมในบิล:</span>
+            <div id="originalItemText" class="text-xs font-bold text-gray-800">-</div>
+        </div>
+
+        <!-- ปุ่มเลือกหมวดหมู่ใหม่ (สไตล์ Take Order) -->
+        <div class="mb-3">
+            <span class="text-xs font-bold text-gray-700 block mb-1.5">📂 เปลี่ยนหมวดหมู่ / เลือกเมนูใหม่:</span>
+            <div class="category-grid" id="categoryGridContainer">
+                <div class="text-center col-span-2 text-gray-400 text-xs py-2">กำลังโหลดหมวดหมู่...</div>
+            </div>
+        </div>
+
+        <!-- ชื่อเมนูที่เลือกเปลี่ยน -->
+        <div class="mb-3 bg-gray-50 p-2.5 rounded-xl border">
+            <span class="text-[10px] font-bold text-gray-500 block">เมนูใหม่ที่เลือก:</span>
+            <div id="selectedNewFoodText" class="text-xs font-bold text-blue-600 mt-0.5">ยังไม่ได้เปลี่ยน (ใช้เมนูเดิม)</div>
+        </div>
+
+        <!-- จำนวน -->
+        <div class="flex justify-between items-center mb-3 bg-gray-50 p-2.5 rounded-xl border">
+            <span class="text-xs font-bold text-gray-700">จำนวน:</span>
+            <div class="flex items-center border rounded-lg bg-white overflow-hidden shadow-inner">
+                <button type="button" onclick="changeQty(-1)" class="px-3 py-1 font-bold text-xs bg-gray-100 hover:bg-gray-200">-</button>
+                <span id="itemQty" class="px-3 text-xs font-extrabold text-gray-800">1</span>
+                <button type="button" onclick="changeQty(1)" class="px-3 py-1 font-bold text-xs bg-gray-100 hover:bg-gray-200">+</button>
+            </div>
+        </div>
+
+        <!-- ราคา -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+            <div>
+                <span class="text-[10px] font-bold text-gray-500 block mb-1">ราคาปกติ:</span>
+                <input type="number" id="itemPrice" class="w-full p-2 border rounded-xl text-center text-blue-600 font-bold text-xs bg-gray-50" readonly>
+            </div>
+            <div>
+                <span class="text-[10px] font-bold text-gray-500 block mb-1">ราคาพิเศษ:</span>
+                <input type="number" id="specialPrice" class="w-full p-2 border rounded-xl text-center border-amber-300 font-bold text-xs bg-amber-50/50">
+            </div>
+        </div>
+
+        <!-- หมายเหตุ -->
+        <div class="mb-4">
+            <span class="text-xs font-bold text-gray-700 block mb-1">หมายเหตุเพิ่มเติม:</span>
+            <input type="text" id="itemNote" placeholder="เช่น ไม่เผ็ด..." class="w-full p-2.5 border rounded-xl text-xs outline-none bg-gray-50">
+        </div>
+
+        <!-- ปุ่มบันทึกรายการย่อย -->
+        <div class="flex gap-2">
+            <button onclick="closeModal('editModal')" class="flex-1 py-2.5 rounded-xl bg-gray-200 font-bold text-xs text-gray-700 transition">ยกเลิก</button>
+            <button onclick="saveEditItem()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition">✓ ยืนยันการแก้ไข</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: เลือกเมนูย่อยเมื่อคลิกหมวดหมู่ -->
+<div id="subMenuListModal" class="custom-modal-overlay" onclick="handleOutsideClick(event, 'subMenuListModal')">
+    <div class="custom-modal-box">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b">
+            <h3 id="subModalCategoryTitle" class="font-bold text-sm text-slate-800">เลือกเมนูอาหาร</h3>
+            <button onclick="closeModal('subMenuListModal')" class="text-gray-400 font-bold text-lg px-2">✕</button>
+        </div>
+        <div id="subModalItemsContainer" class="popup-menu-grid"></div>
+    </div>
+</div>
+
+<script src="key.js"></script>
+<script>
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let allOrders = [], allFoods = [], allGroups = [], currentOrder = null, editingIdx = -1;
+    let selectedNewFood = null;
+
+    window.onload = async () => {
+        await loadBills();
+        await loadFoodGroups();
+        await loadFoods();
+    };
+
+    async function loadBills() {
+        const { data } = await db.from('orders').select('*').order('id', { ascending: false });
+        allOrders = data || [];
+        const dropdown = document.getElementById('billDropdown');
+        allOrders.forEach(o => {
+            dropdown.innerHTML += `<option value="${o.id}">บิล #${o.id} | โซน: ${o.zone_name || '-'} | ยอด ${o.total_price}.-</option>`;
+        });
+    }
+
+    async function loadFoodGroups() {
+        const { data } = await db.from('food_groups').select('*').order('name');
+        if (data) {
+            allGroups = data;
+            const container = document.getElementById('categoryGridContainer');
+            container.innerHTML = data.map(g => `
+                <div class="category-card" onclick="openSubMenuModal('${g.id}', '${g.name}')">
+                    🍽️ ${g.name}
+                </div>
+            `).join('');
+        }
+    }
+
+    async function loadFoods() {
+        const { data } = await db.from('foods').select('*').order('name');
+        if (data) allFoods = data;
+    }
+
+    function openSubMenuModal(groupId, groupName) {
+        document.getElementById('subModalCategoryTitle').innerText = `หมวดหมู่: ${groupName}`;
+        const filtered = allFoods.filter(f => f.category_id == groupId);
+        const container = document.getElementById('subModalItemsContainer');
+        
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="text-center text-gray-400 text-xs py-4">ไม่มีเมนูในหมวดหมู่นี้</div>`;
+        } else {
+            container.innerHTML = filtered.map(f => `
+                <button type="button" onclick="selectNewFoodItem('${f.name}', '${f.id}')" class="popup-item-btn">
+                    <span>${f.name}</span>
+                    <span class="text-xs text-amber-600 font-bold">เลือก ➔</span>
+                </button>
+            `).join('');
+        }
+        document.getElementById('subMenuListModal').style.display = 'flex';
+    }
+
+    async function selectNewFoodItem(foodName, foodId) {
+        selectedNewFood = foodName;
+        document.getElementById('selectedNewFoodText').innerText = foodName;
+        closeModal('subMenuListModal');
+
+        // ดึงราคาตามกลุ่มลูกค้า
+        let price = 0;
+        const customerGroupName = currentOrder.customer_group;
+        if (customerGroupName) {
+            const { data: groupData } = await db.from('customer_groups').select('id').eq('name', customerGroupName).maybeSingle();
+            if (groupData) {
+                const { data: priceData } = await db.from('food_prices').select('price').eq('food_id', foodId).eq('customer_group_id', groupData.id).maybeSingle();
+                if (priceData) price = priceData.price;
+            }
+        }
+        document.getElementById('itemPrice').value = price;
+        document.getElementById('specialPrice').value = price;
+    }
+
+    function showOrderDetails() {
+        const selectId = document.getElementById('billDropdown').value;
+        const order = allOrders.find(o => o.id == selectId);
+        if (!order) {
+            document.getElementById('orderDetails').classList.add('hidden');
+            document.getElementById('noOrderMessage').classList.remove('hidden');
+            document.getElementById('saveBar').classList.add('hidden');
+            return;
+        }
+        currentOrder = JSON.parse(JSON.stringify(order));
+        if (typeof currentOrder.items === 'string') {
+            try { currentOrder.items = JSON.parse(currentOrder.items); } catch(e){ currentOrder.items = []; }
+        }
+        
+        document.getElementById('orderDetails').classList.remove('hidden');
+        document.getElementById('noOrderMessage').classList.add('hidden');
+        document.getElementById('saveBar').classList.remove('hidden');
+        renderItemsList();
+    }
+
+    function renderItemsList() {
+        const list = document.getElementById('itemsList');
+        let total = 0;
+        list.innerHTML = currentOrder.items.map((it, i) => {
+            const subtotal = (it.qty || 1) * (it.price || 0);
+            total += subtotal;
+            return `
+                <div onclick="openEditModal(${i})" class="p-3 bg-white rounded-xl border flex justify-between items-center cursor-pointer hover:border-amber-400 transition shadow-sm">
+                    <div>
+                        <div class="font-bold text-xs text-gray-800">${i+1}. ${it.name}</div>
+                        <div class="text-[10px] text-gray-500">จำนวน: ${it.qty} | หมายเหตุ: ${it.note || '-'}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-blue-600 text-xs">${it.price} ฿</div>
+                        <div class="text-[10px] text-emerald-600 font-bold">รวม: ${subtotal} ฿</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        currentOrder.total_price = total;
+        document.getElementById('orderTotal').innerText = `ยอดรวม: ${total} บาท`;
+    }
+
+    function openEditModal(index) {
+        editingIdx = index;
+        const item = currentOrder.items[index];
+        selectedNewFood = null;
+        
+        document.getElementById('originalItemText').innerText = `${item.name} (จำนวน: ${item.qty} | ราคา: ${item.price} บาท)`;
+        document.getElementById('selectedNewFoodText').innerText = "ยังไม่ได้เปลี่ยน (ใช้เมนูเดิม)";
+        document.getElementById('itemQty').innerText = item.qty || 1;
+        document.getElementById('itemPrice').value = item.price || 0;
+        document.getElementById('specialPrice').value = item.price || 0;
+        document.getElementById('itemNote').value = item.note || '';
+
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function changeQty(val) {
+        let q = parseInt(document.getElementById('itemQty').innerText) + val;
+        if (q < 1) q = 1;
+        document.getElementById('itemQty').innerText = q;
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    function handleOutsideClick(event, modalId) {
+        if (event.target.id === modalId) closeModal(modalId);
+    }
+
+    function saveEditItem() {
+        const finalPrice = parseFloat(document.getElementById('specialPrice').value) || parseFloat(document.getElementById('itemPrice').value) || 0;
+        const qty = parseInt(document.getElementById('itemQty').innerText) || 1;
+        const note = document.getElementById('itemNote').value;
+
+        const currentItem = currentOrder.items[editingIdx];
+        const newName = selectedNewFood ? selectedNewFood : currentItem.name;
+
+        currentOrder.items[editingIdx] = {
+            name: newName,
+            qty: qty,
+            price: finalPrice,
+            note: note
+        };
+
+        closeModal('editModal');
+        renderItemsList();
+    }
+
+    async function saveOrderChanges() {
+        if (!currentOrder) return;
+        const { error } = await db.from('orders')
+            .update({ 
+                items: currentOrder.items, 
+                total_price: currentOrder.total_price 
+            })
+            .eq('id', currentOrder.id);
+
+        if (error) {
+            alert("เกิดข้อผิดพลาด: " + error.message);
+        } else {
+            alert("บันทึกการแก้ไขบิลเรียบร้อยแล้ว!");
+            location.reload();
+        }
+    }
+</script>
+</body>
+</html>

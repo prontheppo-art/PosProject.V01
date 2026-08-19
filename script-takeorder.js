@@ -28,6 +28,7 @@ let cart = [];
 let selectedFood = null;
 let activePendingOrderId = null;
 let deliveryFeeManuallyRemoved = false;
+let editingCartIndex = null; // ตัวแปรเก็บสถานะว่ากำลังแก้ไขรายการที่เท่าไหร่ในตะกร้า
 
 let modifierPrices = { friedEgg: 10, omelet: 10 };
 let currentFriedEggCount = 0;
@@ -80,7 +81,6 @@ async function loadModifierPricesFromDB() {
 
 async function loadInitialData() {
     try {
-        // 1. โหลดกลุ่มลูกค้า
         const { data: groups, error: groupErr } = await db.from('customer_groups').select('*').order('id');
         if (groupErr) throw groupErr;
         if (groups) {
@@ -96,7 +96,6 @@ async function loadInitialData() {
             checkTouristDeliveryVisibility();
         }
 
-        // 2. โหลดหมวดหมู่อาหาร
         const { data: fgData, error: fgErr } = await db.from('food_groups').select('*');
         if (fgErr) throw fgErr;
         if (fgData) {
@@ -121,7 +120,6 @@ async function loadInitialData() {
             foodGroups = fgData;
         }
 
-        // 3. โหลดรายการอาหารและราคา
         const { data: foods, error: foodErr } = await db.from('foods').select('*').order('name');
         if (foodErr) throw foodErr;
 
@@ -143,7 +141,6 @@ async function loadInitialData() {
             renderCategoryGrid();
         }
 
-        // 4. โหลดสถานที่และโซน
         const { data: locData, error: locErr } = await db.from('locations').select('*').order('id');
         if (locErr) throw locErr;
         if (locData) allLocations = locData;
@@ -392,22 +389,43 @@ function getFoodPrice(foodId) {
     return 0;
 }
 
-function openItemDetailModal(item, defaultPrice, categoryName) {
+function openItemDetailModal(item, defaultPrice, categoryName, cartIndex = null, existingCartItem = null) {
+    editingCartIndex = cartIndex;
     selectedFood = { ...item, defaultPrice, categoryName };
-    currentFriedEggCount = 0;
-    currentOmeletCount = 0;
     
-    document.getElementById('friedEggQty').value = 0;
-    document.getElementById('omeletQty').value = 0;
+    if (existingCartItem) {
+        currentFriedEggCount = 0;
+        currentOmeletCount = 0;
+        
+        if (existingCartItem.note) {
+            if (existingCartItem.note.includes('ไข่ดาว')) currentFriedEggCount = 1;
+            if (existingCartItem.note.includes('ไข่เจียว')) currentOmeletCount = 1;
+        }
+
+        document.getElementById('friedEggQty').value = currentFriedEggCount;
+        document.getElementById('omeletQty').value = currentOmeletCount;
+        document.getElementById('itemQtyInput').value = existingCartItem.qty || 1;
+        
+        let cleanNote = existingCartItem.note || '';
+        cleanNote = cleanNote.replace(/ไข่ดาว/g, '').replace(/ไข่เจียว/g, '').replace(/^,\s*|,\s*$/g, '').trim();
+        document.getElementById('itemNoteInput').value = cleanNote;
+        
+        document.getElementById('itemCustomPriceInput').value = existingCartItem.price !== defaultPrice ? existingCartItem.price : '';
+    } else {
+        currentFriedEggCount = 0;
+        currentOmeletCount = 0;
+        document.getElementById('friedEggQty').value = 0;
+        document.getElementById('omeletQty').value = 0;
+        document.getElementById('itemQtyInput').value = 1;
+        document.getElementById('itemCustomPriceInput').value = '';
+        document.getElementById('itemNoteInput').value = '';
+    }
 
     const isRiceBox = categoryName && categoryName.includes('ข้าวกล่อง');
     document.getElementById('boxRiceBoxAddons').style.display = isRiceBox ? 'block' : 'none';
 
     document.getElementById('detailItemName').textContent = item.name;
-    document.getElementById('itemQtyInput').value = 1;
     updateItemPriceDisplay();
-    document.getElementById('itemCustomPriceInput').value = '';
-    document.getElementById('itemNoteInput').value = '';
     document.getElementById('itemDetailModal').classList.add('active');
 }
 
@@ -448,21 +466,28 @@ function confirmAddToCart() {
     const finalPrice = !isNaN(customPrice) && customPrice >= 0 ? customPrice : unitPrice;
 
     let addonNotes = [];
-    if (currentFriedEggCount > 0) addonNotes.push(`ไข่ดาว ${currentFriedEggCount} ฟอง`);
-    if (currentOmeletCount > 0) addonNotes.push(`ไข่เจียว ${currentOmeletCount} ฟอง`);
+    if (currentFriedEggCount > 0) addonNotes.push(`ไข่ดาว`);
+    if (currentOmeletCount > 0) addonNotes.push(`ไข่เจียว`);
     
     let userNote = document.getElementById('itemNoteInput').value.trim();
     let addonString = addonNotes.join(', ');
     let fullNote = addonString ? `${addonString}${userNote ? ', ' + userNote : ''}` : userNote;
 
-    cart.push({
+    const newItemData = {
         id: selectedFood.id,
         name: selectedFood.name,
         price: finalPrice,
         qty: qty,
         note: fullNote,
         group: currentGroup
-    });
+    };
+
+    if (editingCartIndex !== null && editingCartIndex >= 0) {
+        cart[editingCartIndex] = newItemData;
+        editingCartIndex = null;
+    } else {
+        cart.push(newItemData);
+    }
 
     saveCart();
     updateCartDisplay();
@@ -690,21 +715,57 @@ function updateCartDisplay() {
     previewList.innerHTML = '';
     cart.forEach((item, index) => {
         const div = document.createElement('div');
-        div.className = 'cart-preview-item';
+        div.className = 'cart-preview-item flex justify-between items-center';
         
         const noteHtml = item.note ? `<span class="${item.isDeliveryFee ? 'text-amber-600' : 'text-red-600'} ml-1">(${item.note})</span>` : '';
+        const unitPriceDisplay = `${item.price}.-`;
+        const itemTotalPrice = item.price * item.qty;
 
-        div.innerHTML = `
-            <div>
-                <span class="font-bold ${item.isDeliveryFee ? 'text-amber-800' : 'text-slate-800'}">${item.name}</span> 
-                <span class="text-blue-600 font-bold">(${item.price}.-)</span>
-                <span class="text-green-600 font-bold ml-1">x${item.qty}</span>
-                ${noteHtml}
-            </div>
-            <button onclick="removeFromCart(${index})" class="text-red-500 font-bold px-2">✕</button>
-        `;
+        if (item.isDeliveryFee) {
+            div.innerHTML = `
+                <div class="flex-1">
+                    <span class="font-bold text-amber-800">${item.name}</span> 
+                    <span class="text-blue-600 font-bold">(${unitPriceDisplay})</span>
+                    <span class="text-green-600 font-bold ml-1">x${item.qty}</span>
+                    ${noteHtml}
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-700 font-bold">${itemTotalPrice}.-</span>
+                    <button onclick="removeFromCart(${index})" class="text-red-500 font-bold px-2">✕</button>
+                </div>
+            `;
+        } else {
+            div.innerHTML = `
+                <div class="flex-1 cursor-pointer" onclick="editCartItem(${index})">
+                    <span class="font-bold text-slate-800 hover:text-blue-600 underline decoration-dashed">${item.name}</span> 
+                    <span class="text-blue-600 font-bold">(${unitPriceDisplay})</span>
+                    <span class="text-green-600 font-bold ml-1">x${item.qty}</span>
+                    ${noteHtml}
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-slate-700 font-bold">${itemTotalPrice}.-</span>
+                    <button onclick="removeFromCart(${index})" class="text-red-500 font-bold px-2">✕</button>
+                </div>
+            `;
+        }
         previewList.appendChild(div);
     });
+}
+
+function editCartItem(index) {
+    const cartItem = cart[index];
+    if (!cartItem || cartItem.isDeliveryFee) return;
+
+    let foundFood = allFoodItems.find(f => String(f.id) === String(cartItem.id));
+    if (!foundFood) {
+        foundFood = { id: cartItem.id, name: cartItem.name };
+    }
+
+    const defaultPrice = getFoodPrice(cartItem.id);
+    const categoryObj = foodGroups.find(g => g.id === foundFood.category_id);
+    const categoryName = categoryObj ? categoryObj.name : '';
+
+    openItemDetailModal(foundFood, defaultPrice, categoryName, index, cartItem);
 }
 
 function removeFromCart(index) {
