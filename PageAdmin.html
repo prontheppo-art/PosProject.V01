@@ -33,10 +33,10 @@
             background: #ffffff;
             width: 100%;
             max-width: 500px;
-            max-height: 96vh; /* ป้องกันการล้นหน้าจอในมือถือบางรุ่น */
+            max-height: 96vh;
             height: 100%;
             border-radius: 20px;
-            padding: 16px 14px; /* ลด Padding เล็กน้อยเพื่อให้พอดีกับจอเล็ก */
+            padding: 16px 14px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
@@ -68,7 +68,6 @@
             color: #64748b;
         }
 
-        /* ส่วนรายการเมนู ให้สามารถเลื่อน (Scroll) เฉพาะส่วนนี้ได้หากหน้าจอเล็กเกินไป */
         .menu-list {
             display: flex;
             flex-direction: column;
@@ -108,9 +107,82 @@
         .btn-mapping { background: #0d9488; }
         .btn-password { background: #334155; }
         .btn-home { background: #ef4444; }
+
+        /* สไตล์สำหรับกล่องกรอกรหัสผ่าน */
+        #authModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 16px;
+        }
+        .auth-box {
+            background: white;
+            width: 100%;
+            max-width: 320px;
+            padding: 24px 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* สไตล์สำหรับ Custom Dialog แจ้งเตือนเมื่อรหัสผิด */
+        #customDialog {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(2px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 16px;
+        }
+        #customDialog.active {
+            display: flex;
+        }
+        .dialog-content {
+            background: white;
+            width: 100%;
+            max-width: 280px;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: scaleUp 0.15s ease-out;
+        }
+        @keyframes scaleUp {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
+
+    <!-- หน้าต่างกรอกรหัสผ่าน (Password Modal) -->
+    <div id="authModal">
+        <div class="auth-box">
+            <div style="font-size: 32px; margin-bottom: 8px;">🔒</div>
+            <div style="font-size: 16px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">เข้าสู่ระบบผู้ดูแลระบบ</div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;">กรุณากรอกรหัสผ่านเพื่อเข้าใช้งาน</div>
+            <input type="password" id="adminPasswordInput" placeholder="รหัสผ่าน" style="width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; text-align: center; margin-bottom: 12px; outline: none;" />
+            <button onclick="checkAdminPassword()" style="width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);">ยืนยันรหัสผ่าน</button>
+        </div>
+    </div>
+
+    <!-- Custom Dialog Box สำหรับแจ้งเตือนรหัสผิด -->
+    <div id="customDialog">
+        <div class="dialog-content">
+            <div style="font-size: 32px; margin-bottom: 8px;">⚠️</div>
+            <div style="font-size: 15px; font-weight: bold; color: #1e293b; margin-bottom: 6px;">รหัสผ่านไม่ถูกต้อง</div>
+            <div id="dialogMessage" style="font-size: 12px; color: #64748b; margin-bottom: 16px; line-height: 1.4;">คุณกรอกรหัสผ่านผิด (ครั้งที่ 1 จาก 3)</div>
+            <button onclick="closeCustomDialog()" style="width: 100%; padding: 10px; background: #ef4444; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 13px; cursor: pointer;">ตกลง</button>
+        </div>
+    </div>
 
     <div class="app-layout">
         <div class="main-card">
@@ -138,7 +210,7 @@
                     <span>🔑 เปลี่ยนรหัสผ่านแอดมิน (changepwd)</span>
                 </a>
                 <!-- 5. index -->
-                <a href="index.html" class="menu-btn btn-home">
+                <a href="index.html" onclick="logoutAdmin()" class="menu-btn btn-home">
                     <span>🏠 กลับหน้าหลัก (index)</span>
                 </a>
             </div>
@@ -146,6 +218,68 @@
     </div>
 
     <script>
+        let failedAttempts = 0; // ตัวแปรนับจำนวนครั้งที่ใส่ผิด
+        const maxAttempts = 3;  // กำหนดให้ใส่ผิดได้สูงสุด 3 ครั้ง
+
+        function checkAdminPassword() {
+            const pass = document.getElementById('adminPasswordInput').value;
+            const correctPassword = "1234"; // รหัสผ่านเริ่มต้น
+            
+            if (pass === correctPassword) {
+                sessionStorage.setItem('isAdminLoggedIn', 'true');
+                document.getElementById('authModal').style.display = 'none';
+            } else {
+                failedAttempts++;
+                document.getElementById('adminPasswordInput').value = '';
+
+                if (failedAttempts >= maxAttempts) {
+                    // ถ้าใส่ผิดครบ 3 ครั้ง ให้เด้งกลับหน้า index ทันที
+                    window.location.href = 'index.html';
+                } else {
+                    // ถ้ายังไม่ครบ 3 ครั้ง ให้แสดง Dialog เตือน พร้อมบอกจำนวนครั้งที่เหลือ
+                    const remaining = maxAttempts - failedAttempts;
+                    document.getElementById('dialogMessage').textContent = `รหัสผ่านไม่ถูกต้อง คุณกรอกผิดครั้งที่ ${failedAttempts} (เหลือโอกาสอีก ${remaining} ครั้ง)`;
+                    document.getElementById('customDialog').classList.add('active');
+                }
+            }
+        }
+
+        function closeCustomDialog() {
+            document.getElementById('customDialog').classList.remove('active');
+            const passInput = document.getElementById('adminPasswordInput');
+            if (passInput) passInput.focus();
+        }
+
+        // ฟังก์ชันล้างสถานะล็อกอินเมื่อกดกลับหน้าหลัก
+        function logoutAdmin() {
+            sessionStorage.removeItem('isAdminLoggedIn');
+        }
+
+        // ตรวจสอบว่าเคยใส่รหัสผ่านถูกต้องไปแล้วหรือยังในเซสชันนี้
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+                document.getElementById('authModal').style.display = 'none';
+            } else {
+                const passInput = document.getElementById('adminPasswordInput');
+                if (passInput) passInput.focus();
+            }
+        });
+
+        // กดปุ่ม Enter บนคีย์บอร์ดเพื่อยืนยันรหัสได้ทันที
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const dialogActive = document.getElementById('customDialog').classList.contains('active');
+                if (dialogActive) {
+                    closeCustomDialog();
+                    return;
+                }
+                const modal = document.getElementById('authModal');
+                if (modal && modal.style.display !== 'none') {
+                    checkAdminPassword();
+                }
+            }
+        });
+
         document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
         document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
         document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
