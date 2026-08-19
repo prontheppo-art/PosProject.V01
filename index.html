@@ -16,8 +16,6 @@
             background: #f4f6f9; 
             touch-action: pan-y; 
             -webkit-text-size-adjust: 100%;
-            -webkit-user-select: none;
-            user-select: none;
         }
 
         /* จัดโครงสร้างให้หัวข้อชิดด้านบน (Top-aligned) และอยู่กึ่งกลางในแนวนอน */
@@ -30,7 +28,7 @@
             margin: 0 auto; 
             background: #fff; 
             box-sizing: border-box; 
-            padding: 20px 16px; 
+            padding: 16px 16px; 
             justify-content: flex-start; 
             align-items: center; 
             overflow: hidden;
@@ -40,49 +38,57 @@
 <body>
 
 <div class="app-layout shadow-xl">
-    <!-- ส่วนหัว ล็อกติดด้านบน -->
-    <div class="w-full text-center pt-2 pb-4 flex flex-col items-center shrink-0 border-b border-gray-100 mb-4">
-        <div class="w-18 h-36 bg-blue-50 rounded-full flex items-center justify-center text-4xl mb-2 shadow-inner">🍽️</div>
-        <h1 class="font-extrabold text-sm text-slate-800 mb-0.5">ลาบหนองบัวลำภู @เขื่อนขุนด่านปราการชล</h1>
-        <p class="text-[10px] text-gray-500 font-medium">ระบบจัดการร้านอาหารและสั่งอาหาร</p>
+    <!-- ส่วนหัว (แบ่งเป็น 2 บรรทัด และขยายขนาดใหญ่ขึ้นประมาณ 50%) -->
+    <div class="w-full text-center pt-1 pb-3 flex flex-col items-center shrink-0 border-b border-gray-100 mb-3">
+        <h1 class="font-extrabold text-xl text-slate-900 leading-snug">ลาบหนองบัวลำภู</h1>
+        <h2 class="font-bold text-base text-slate-700 mt-1">@เขื่อนขุนด่านปราการชล</h2>
+        <p class="text-[10px] text-gray-500 font-medium mt-1">ระบบจัดการร้านอาหารและสั่งอาหาร</p>
     </div>
 
-    <!-- ปุ่มเมนูต่างๆ (สลับ 'สรุปออเดอร์รายวัน' มาเป็นลำดับที่ 2) -->
-    <div class="w-full space-y-3">
+    <!-- ปุ่มเมนูต่างๆ -->
+    <div class="w-full space-y-2.5 overflow-y-auto">
         <!-- 1. หน้าสั่งอาหาร -->
-        <button type="button" onclick="goToPage('TakeOrder.html')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer">
+        <button type="button" onclick="goToPage('TakeOrder.html')" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer shrink-0">
             <span class="text-base">📝</span> หน้าสั่งอาหาร
         </button>
 
-        <!-- 2. สรุปออเดอร์รายวัน (ย้ายขึ้นมาเป็นอันดับ 2) -->
-        <button type="button" onclick="goToPage('SalesReportByGroup.html')" class="w-full bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer">
+        <!-- 2. สรุปออเดอร์รายวัน -->
+        <button type="button" onclick="goToPage('SaleReportByDay.html')" class="w-full bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer shrink-0">
             <span class="text-base">📋</span> สรุปออเดอร์รายวัน
         </button>
 
-        <!-- 3. สรุปยอดขาย & ประวัติออร์เดอร์ (ขยับลงมา) -->
-        <a href="SalesReport.html" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer no-underline block text-center">
+        <!-- 3. สรุปตามกลุ่มลูกค้า -->
+        <button type="button" onclick="goToPage('SalesReportByGroup.html')" class="w-full bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer shrink-0">
+            <span class="text-base">👥</span> สรุปตามกลุ่มลูกค้า
+        </button>
+
+        <!-- 4. สรุปยอดขาย & ประวัติออร์เดอร์ -->
+        <a href="SalesReport.html" class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer no-underline block text-center shrink-0">
             <span class="text-base">📊</span> สรุปยอดขาย & ประวัติออร์เดอร์
         </a>
 
-        <!-- 4. สต็อกสินค้าคงเหลือ -->
-        <button type="button" onclick="goToPage('Inventory.html')" class="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer">
+        <!-- 5. สต็อกสินค้าคงเหลือ -->
+        <button type="button" onclick="goToPage('Inventory.html')" class="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer shrink-0">
             <span class="text-base">📦</span> สต็อกสินค้าคงเหลือ
         </button>
 
-        <!-- 5. ผู้ดูแลระบบ -->
-        <button type="button" onclick="goToPage('PageAdmin.html')" class="w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer">
+        <!-- 6. การจัดการสต็อกสินค้า (Edit Stock) -->
+        <button type="button" onclick="goToPage('EditStock.html')" class="w-full bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer shrink-0">
+            <span class="text-base">📦</span> การจัดการสต็อกสินค้า (Edit Stock)
+        </button>
+
+        <!-- 7. ผู้ดูแลระบบ -->
+        <button type="button" onclick="goToPage('PageAdmin.html')" class="w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2.5 text-sm cursor-pointer shrink-0">
             <span class="text-base">🔒</span> ผู้ดูแลระบบ
         </button>
     </div>
 </div>
 
 <script>
-    // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
     document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
     document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
 
-    // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function (event) {
         const now = (new Date()).getTime();
@@ -92,7 +98,6 @@
         lastTouchEnd = now;
     }, { passive: false });
 
-    // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
     document.addEventListener('touchstart', function (event) {
         if (event.touches.length > 1) {
             event.preventDefault();

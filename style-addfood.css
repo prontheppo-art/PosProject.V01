@@ -1,0 +1,14 @@
+html, body { 
+    height: 100%; margin: 0; padding: 0; overflow: hidden; 
+    font-family: sans-serif; background: #f4f6f9; 
+    touch-action: pan-y; -webkit-text-size-adjust: 100%;
+    -webkit-user-select: none; user-select: none;
+}
+.app-layout { 
+    display: grid; grid-template-rows: auto 1fr auto; 
+    height: 100dvh; max-width: 500px; margin: 0 auto; 
+    background: #fff; box-sizing: border-box; overflow: hidden; padding: 16px;
+}
+.header-section { background: #fff; z-index: 10; flex-shrink: 0; }
+.content-section { overflow-y: auto; display: flex; flex-direction: column; -webkit-overflow-scrolling: touch; min-height: 0; }
+.footer-section { background: #fff; z-index: 10; flex-shrink: 0; }

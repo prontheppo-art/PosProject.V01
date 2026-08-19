@@ -15,19 +15,17 @@
             background: #f3f4f6;
             touch-action: pan-y;
             -webkit-text-size-adjust: 100%;
-            -webkit-user-select: none;
-            user-select: none;
         }
 
         /* จัดโครงสร้างให้ชิดด้านบน (Top-aligned) และอยู่กึ่งกลางในแนวนอน */
         .app-layout {
             display: flex;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
             height: 100dvh;
             width: 100vw;
             box-sizing: border-box;
-            padding: 12px 16px;
+            padding: 10px 12px;
             overflow: hidden;
         }
 
@@ -35,9 +33,10 @@
             background: #ffffff;
             width: 100%;
             max-width: 500px;
-            height: 96vh;
-            border-radius: 24px;
-            padding: 20px 16px;
+            max-height: 96vh; /* ป้องกันการล้นหน้าจอในมือถือบางรุ่น */
+            height: 100%;
+            border-radius: 20px;
+            padding: 16px 14px; /* ลด Padding เล็กน้อยเพื่อให้พอดีกับจอเล็ก */
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
@@ -49,15 +48,16 @@
 
         .header-section {
             flex-shrink: 0;
+            margin-bottom: 8px;
         }
 
         .icon-top {
-            font-size: 32px;
-            margin-bottom: 6px;
+            font-size: 28px;
+            margin-bottom: 4px;
         }
 
         .store-title {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: bold;
             color: #1e293b;
             margin-bottom: 2px;
@@ -66,19 +66,18 @@
         .store-subtitle {
             font-size: 11px;
             color: #64748b;
-            margin-bottom: 12px;
         }
 
         /* ส่วนรายการเมนู ให้สามารถเลื่อน (Scroll) เฉพาะส่วนนี้ได้หากหน้าจอเล็กเกินไป */
         .menu-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             width: 100%;
             overflow-y: auto;
             flex: 1;
-            padding-right: 2px;
-            content-start: top;
+            padding: 4px 2px;
+            box-sizing: border-box;
         }
 
         .menu-btn {
@@ -86,7 +85,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            height: 48px;
+            height: 46px;
             padding: 0 16px;
             border-radius: 12px;
             font-size: 12px;
@@ -106,7 +105,6 @@
 
         .btn-food { background: #2563eb; }
         .btn-price { background: #d97706; }
-        .btn-stock-init { background: #ea580c; }
         .btn-mapping { background: #0d9488; }
         .btn-password { background: #334155; }
         .btn-home { background: #ef4444; }
@@ -131,19 +129,15 @@
                 <a href="EditFood.html" class="menu-btn btn-price">
                     <span>📋 ดูแลและแก้ไขตารางราคา (EditFood)</span>
                 </a>
-                <!-- 3. Stock Management -->
-                <a href="stockmanagement.html" class="menu-btn btn-stock-init">
-                    <span>📦 การจัดการสต็อกสินค้า (Stock Management)</span>
-                </a>
-                <!-- 4. foodmapping -->
+                <!-- 3. foodmapping -->
                 <a href="foodmapping.html" class="menu-btn btn-mapping">
                     <span>🔗 จัดการสูตรอาหาร & วัตถุดิบ (foodmapping)</span>
                 </a>
-                <!-- 5. changepwd -->
+                <!-- 4. changepwd -->
                 <a href="changepwd.html" class="menu-btn btn-password">
                     <span>🔑 เปลี่ยนรหัสผ่านแอดมิน (changepwd)</span>
                 </a>
-                <!-- 6. index -->
+                <!-- 5. index -->
                 <a href="index.html" class="menu-btn btn-home">
                     <span>🏠 กลับหน้าหลัก (index)</span>
                 </a>
@@ -152,12 +146,10 @@
     </div>
 
     <script>
-        // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
         document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
         document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
         document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
 
-        // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
         let lastTouchEnd = 0;
         document.addEventListener('touchend', function (event) {
             const now = (new Date()).getTime();
@@ -167,7 +159,6 @@
             lastTouchEnd = now;
         }, { passive: false });
 
-        // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
         document.addEventListener('touchstart', function (event) {
             if (event.touches.length > 1) {
                 event.preventDefault();

@@ -6,6 +6,8 @@
     <title>สรุปยอดขายแยกตามกลุ่มลูกค้า</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="key.js"></script>
+    <script src="slender.js"></script> <!-- ดึงไฟล์ปฏิทินกลาง slender.js มาใช้งาน -->
     <style>
         /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า ป้องกันการยืดหดของ viewport บนมือถือ */
         html, body { 
@@ -39,17 +41,17 @@
 <body>
 
 <div class="app-layout shadow-xl relative">
-    <!-- หัวข้อ (เอาปุ่มหน้าหลักออกแล้ว) -->
+    <!-- หัวข้อ -->
     <div class="pb-3 border-b mb-3 shrink-0">
         <h1 class="font-extrabold text-sm text-slate-800">📊 สรุปยอดขายแยกตามกลุ่มลูกค้า</h1>
     </div>
 
-    <!-- ตัวเลือกวันที่ -->
+    <!-- ตัวเลือกวันที่ (เปลี่ยนมาใช้ปุ่มเรียก CalendarSystem จาก slender.js) -->
     <div class="mb-3 bg-blue-50 p-2.5 rounded-xl border border-blue-100 flex items-center justify-between shrink-0">
         <span class="text-xs font-bold text-blue-900">📅 เลือกวันที่ดูยอดขาย:</span>
-        <select id="filterDateSelect" onchange="loadSalesData()" class="p-1.5 border rounded-lg text-xs font-bold bg-white text-blue-700 outline-none shadow-sm">
-            <option value="">กำลังโหลดวันที่...</option>
-        </select>
+        <button type="button" onclick="openCustomCalendar()" id="dateFilterBtn" class="px-3 py-1.5 border rounded-lg text-xs font-bold bg-white text-blue-700 outline-none shadow-sm flex items-center gap-1 cursor-pointer">
+            <span id="dateButtonText">📅 เลือกวัน</span>
+        </button>
     </div>
 
     <!-- พื้นที่แสดงผลสรุป (ให้เลื่อนเฉพาะส่วนนี้) -->
@@ -57,7 +59,7 @@
         <div class="text-center text-gray-400 py-10 text-xs">กำลังโหลดข้อมูลยอดขาย...</div>
     </div>
 
-    <!-- ย้ายปุ่ม "หน้าหลัก" มาไว้ด้านล่างสุด -->
+    <!-- ปุ่มหน้าหลักด้านล่างสุด -->
     <div class="pt-3 border-t mt-auto shrink-0">
         <a href="index.html" class="w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs no-underline block text-center cursor-pointer">
             <span class="text-sm">🏠</span> กลับสู่หน้าหลัก
@@ -74,7 +76,7 @@
                 <h3 id="modalGroupName" class="font-extrabold text-sm text-amber-400">กลุ่มลูกค้า</h3>
                 <p id="modalGroupMeta" class="text-[11px] text-slate-300 mt-0.5">จำนวน 0 บิล</p>
             </div>
-            <button onclick="closeModal()" class="bg-slate-700 hover:bg-slate-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition">✕</button>
+            <button type="button" onclick="closeModal()" class="bg-slate-700 hover:bg-slate-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition cursor-pointer">✕</button>
         </div>
         <!-- รายการบิลและอาหารด้านใน -->
         <div id="modalOrderList" class="p-4 overflow-y-auto space-y-3 flex-1 bg-gray-50">
@@ -88,7 +90,6 @@
     </div>
 </div>
 
-<script src="key.js"></script>
 <script>
     // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด)
     document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
@@ -112,47 +113,25 @@
 
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     let globalGroupData = {};
+    let currentSelectedDate = "";
 
     window.onload = async function() {
-        await initDateDropdown();
+        const today = new Date().toISOString().split('T')[0];
+        currentSelectedDate = today;
+        document.getElementById('dateButtonText').textContent = formatDateThai(today);
+
+        // กำหนดค่าเริ่มต้นและเชื่อมต่อการเลือกวันผ่าน slender.js
+        CalendarSystem.init((selectedDateStr) => {
+            currentSelectedDate = selectedDateStr;
+            document.getElementById('dateButtonText').textContent = formatDateThai(selectedDateStr);
+            loadSalesData();
+        });
+
+        await loadSalesData();
     };
 
-    async function initDateDropdown() {
-        try {
-            const { data: orders, error } = await db
-                .from('orders')
-                .select('order_date')
-                .neq('status', 'pending')
-                .order('order_date', { ascending: false });
-
-            if (error) throw error;
-
-            const select = document.getElementById('filterDateSelect');
-            select.innerHTML = '';
-
-            if (!orders || orders.length === 0) {
-                select.innerHTML = `<option value="">-- ไม่พบประวัติการขาย --</option>`;
-                document.getElementById('summaryContainer').innerHTML = `<div class="text-center text-gray-500 py-16 text-xs bg-gray-50 rounded-2xl border border-dashed">❌ ไม่พบข้อมูลการขายในระบบ</div>`;
-                return;
-            }
-
-            const uniqueDates = [...new Set(orders.map(o => o.order_date))].filter(Boolean);
-            const today = new Date().toISOString().split('T')[0];
-            let defaultDate = uniqueDates.includes(today) ? today : uniqueDates[0];
-
-            uniqueDates.forEach(dateStr => {
-                const opt = document.createElement('option');
-                opt.value = dateStr;
-                opt.textContent = formatDateThai(dateStr);
-                if (dateStr === defaultDate) opt.selected = true;
-                select.appendChild(opt);
-            });
-
-            await loadSalesData();
-        } catch (err) {
-            console.error("Error initializing dates:", err);
-            document.getElementById('summaryContainer').innerHTML = `<div class="text-center text-red-500 py-10 text-xs">เกิดข้อผิดพลาด: ${err.message}</div>`;
-        }
+    function openCustomCalendar() {
+        CalendarSystem.open(currentSelectedDate);
     }
 
     function formatDateThai(dateString) {
@@ -163,7 +142,7 @@
     }
 
     async function loadSalesData() {
-        const selectedDate = document.getElementById('filterDateSelect').value;
+        const selectedDate = currentSelectedDate;
         const container = document.getElementById('summaryContainer');
         if (!selectedDate) return;
 

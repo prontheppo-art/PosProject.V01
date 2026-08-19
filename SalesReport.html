@@ -6,6 +6,8 @@
     <title>สรุปยอดขาย</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="key.js"></script>
+    <script src="slender.js"></script> <!-- ดึงไฟล์ปฏิทินกลาง slender.js มาใช้งาน -->
     <style>
         /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า */
         html, body { 
@@ -19,19 +21,6 @@
             display: flex; align-items: center; justify-content: center; 
             height: 100dvh; width: 100vw; padding: 16px; box-sizing: border-box; 
         }
-
-        .cal-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
-        .cal-modal.active { opacity: 1; pointer-events: auto; }
-        .cal-box { background: white; width: 90%; max-width: 320px; border-radius: 24px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transform: scale(0.95); transition: transform 0.2s ease; }
-        .cal-modal.active .cal-box { transform: scale(1); }
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-        .cal-day-header { font-size: 11px; font-weight: bold; color: #94a3b8; padding-bottom: 8px; }
-        .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; color: #334155; border-radius: 50%; cursor: pointer; transition: background 0.1s; }
-        .cal-day:hover { background: #f1f5f9; }
-        .cal-day.selected { background: #2563eb; color: white; }
-        .cal-day.today { border: 2px solid #2563eb; color: #2563eb; }
-        .cal-day.today.selected { background: #2563eb; color: white; border: none; }
-        .cal-day.empty { pointer-events: none; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -47,11 +36,12 @@
                 </div>
 
                 <div class="bg-gray-100 p-1 rounded-2xl grid grid-cols-4 gap-1">
-                    <button onclick="filterOrders('today', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn cursor-pointer">วันนี้</button>
-                    <button onclick="filterOrders('week', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn cursor-pointer">สัปดาห์นี้</button>
-                    <button onclick="filterOrders('month', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn cursor-pointer">เดือนนี้</button>
+                    <button type="button" onclick="filterOrders('today', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn cursor-pointer">วันนี้</button>
+                    <button type="button" onclick="filterOrders('week', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn cursor-pointer">สัปดาห์นี้</button>
+                    <button type="button" onclick="filterOrders('month', this)" class="py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn cursor-pointer">เดือนนี้</button>
                     
-                    <button onclick="openCustomCalendar()" id="dateFilterBtn" class="py-1.5 text-[11px] font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn bg-transparent flex items-center justify-center truncate px-1 cursor-pointer">
+                    <!-- ปุ่มเรียกใช้งาน CalendarSystem จาก slender.js -->
+                    <button type="button" onclick="openCustomCalendar()" id="dateFilterBtn" class="py-1.5 text-[11px] font-bold rounded-xl text-gray-500 hover:text-gray-800 transition filter-btn bg-transparent flex items-center justify-center truncate px-1 cursor-pointer">
                         <span id="dateButtonText">📅 เลือกวัน</span>
                     </button>
                 </div>
@@ -83,47 +73,18 @@
         </div>
     </div>
 
-    <!-- ปฏิทินเลือกวัน -->
-    <div id="customCalendarModal" class="cal-modal">
-        <div class="cal-box">
-            <div class="flex justify-between items-center mb-3">
-                <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 flex items-center justify-center cursor-pointer">‹</button>
-                <h3 id="calMonthYear" class="font-bold text-sm text-gray-800">สิงหาคม 2026</h3>
-                <button onclick="changeMonth(1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 font-bold text-gray-600 flex items-center justify-center cursor-pointer">›</button>
-            </div>
-            
-            <div class="cal-grid mb-2">
-                <div class="cal-day-header">อา</div>
-                <div class="cal-day-header">จ</div>
-                <div class="cal-day-header">อ</div>
-                <div class="cal-day-header">พ</div>
-                <div class="cal-day-header">พฤ</div>
-                <div class="cal-day-header">ศ</div>
-                <div class="cal-day-header">ส</div>
-            </div>
-            
-            <div id="calDaysContainer" class="cal-grid mb-4"></div>
-
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="selectToday()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">📅 วันนี้</button>
-                <button onclick="closeCustomCalendar()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">ยกเลิก</button>
-            </div>
-        </div>
-    </div>
-
     <!-- โมดอลรายละเอียดออร์เดอร์ -->
     <div id="detailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-200 p-4">
         <div class="bg-white w-[90%] max-w-[340px] rounded-2xl p-5 shadow-2xl transform scale-95 transition-transform duration-200" id="detailBox">
             <div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-3">
                 <h3 class="text-sm font-bold text-gray-800">📋 รายละเอียดออร์เดอร์</h3>
-                <button onclick="closeDetailModal()" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-xs cursor-pointer">✕</button>
+                <button type="button" onclick="closeDetailModal()" class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-xs cursor-pointer">✕</button>
             </div>
             <div id="detailContent" class="space-y-1.5 max-h-60 overflow-y-auto text-xs text-gray-600 mb-4 pr-1"></div>
-            <button onclick="closeDetailModal()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">ปิดหน้าต่าง</button>
+            <button type="button" onclick="closeDetailModal()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">ปิดหน้าต่าง</button>
         </div>
     </div>
 
-    <script src="key.js"></script>
     <script>
         // ป้องกันการซูมหน้าจอด้วยนิ้ว (Pinch-to-zoom และ Gesture ทั้งหมด) อย่างเด็ดขาด
         document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
@@ -136,8 +97,6 @@
         const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let allOrders = [];
-        let viewDate = new Date();
-        let selectedDateStr = "";
 
         function cleanGroupName(name) {
             if (!name) return 'ทั่วไป';
@@ -149,6 +108,28 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             window.lastTouchEnd = 0;
+
+            // กำหนดค่าเริ่มต้นและรับค่าวันที่ที่ถูกเลือกจาก slender.js
+            CalendarSystem.init((selectedDateStr) => {
+                const btn = document.getElementById('dateFilterBtn');
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('bg-white', 'shadow-xs', 'text-gray-800');
+                    b.classList.add('text-gray-500');
+                });
+                btn.classList.add('bg-white', 'shadow-xs', 'text-gray-800');
+                btn.classList.remove('text-gray-500');
+
+                document.getElementById('dateButtonText').textContent = selectedDateStr;
+
+                const filtered = allOrders.filter(o => {
+                    const orderDateStr = new Date(o.created_at).toISOString().split('T')[0];
+                    return orderDateStr === selectedDateStr;
+                });
+
+                document.getElementById('summaryLabel').textContent = `ยอดรวมวันที่ ${selectedDateStr}`;
+                renderOrderHistory(filtered);
+            });
+
             await fetchOrdersFromDatabase();
         });
 
@@ -199,7 +180,7 @@
             }
 
             document.getElementById('dateButtonText').textContent = "📅 เลือกวัน";
-            selectedDateStr = "";
+            CalendarSystem.selectedDateStr = "";
 
             const now = new Date();
             let filtered = allOrders;
@@ -226,83 +207,9 @@
             renderOrderHistory(filtered);
         }
 
+        // ฟังก์ชันสั่งเปิดปฏิทินจาก slender.js
         function openCustomCalendar() {
-            document.getElementById('customCalendarModal').classList.add('active');
-            renderCalendarGrid();
-        }
-
-        function closeCustomCalendar() {
-            document.getElementById('customCalendarModal').classList.remove('active');
-        }
-
-        function changeMonth(direction) {
-            viewDate.setMonth(viewDate.getMonth() + direction);
-            renderCalendarGrid();
-        }
-
-        function renderCalendarGrid() {
-            const container = document.getElementById('calDaysContainer');
-            const monthYearLabel = document.getElementById('calMonthYear');
-            
-            const year = viewDate.getFullYear();
-            const month = viewDate.getMonth();
-
-            const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-            monthYearLabel.textContent = `${thaiMonths[month]} ${year + 543}`;
-
-            const firstDayIndex = new Date(year, month, 1).getDay();
-            const totalDays = new Date(year, month + 1, 0).getDate();
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            let html = '';
-            for (let i = 0; i < firstDayIndex; i++) {
-                html += `<div class="cal-day empty"></div>`;
-            }
-
-            for (let day = 1; day <= totalDays; day++) {
-                const formattedMonth = String(month + 1).padStart(2, '0');
-                const formattedDay = String(day).padStart(2, '0');
-                const dateString = `${year}-${formattedMonth}-${formattedDay}`;
-
-                const isToday = dateString === todayStr;
-                const isSelected = dateString === selectedDateStr;
-
-                let classes = 'cal-day';
-                if (isToday) classes += ' today';
-                if (isSelected) classes += ' selected';
-
-                html += `<div class="${classes}" onclick="pickDate('${dateString}')">${day}</div>`;
-            }
-
-            container.innerHTML = html;
-        }
-
-        function pickDate(dateString) {
-            selectedDateStr = dateString;
-            closeCustomCalendar();
-
-            const btn = document.getElementById('dateFilterBtn');
-            document.querySelectorAll('.filter-btn').forEach(b => {
-                b.classList.remove('bg-white', 'shadow-xs', 'text-gray-800');
-                b.classList.add('text-gray-500');
-            });
-            btn.classList.add('bg-white', 'shadow-xs', 'text-gray-800');
-            btn.classList.remove('text-gray-500');
-
-            document.getElementById('dateButtonText').textContent = selectedDateStr;
-
-            const filtered = allOrders.filter(o => {
-                const orderDateStr = new Date(o.created_at).toISOString().split('T')[0];
-                return orderDateStr === selectedDateStr;
-            });
-
-            document.getElementById('summaryLabel').textContent = `ยอดรวมวันที่ ${selectedDateStr}`;
-            renderOrderHistory(filtered);
-        }
-
-        function selectToday() {
-            const todayStr = new Date().toISOString().split('T')[0];
-            pickDate(todayStr);
+            CalendarSystem.open(CalendarSystem.selectedDateStr);
         }
 
         function renderOrderHistory(orders) {
@@ -328,7 +235,7 @@
                             <span class="font-extrabold text-red-600 text-sm shrink-0">${totalAmount} ฿</span>
                             <span class="text-[11px] text-gray-400 truncate">(${dateStr})</span>
                         </div>
-                        <button onclick="openDetailModal(${order.id})" class="text-blue-600 hover:text-blue-800 font-bold text-xs px-2 py-1 transition shrink-0 cursor-pointer">
+                        <button type="button" onclick="openDetailModal(${order.id})" class="text-blue-600 hover:text-blue-800 font-bold text-xs px-2 py-1 transition shrink-0 cursor-pointer">
                             Detail
                         </button>
                     </div>

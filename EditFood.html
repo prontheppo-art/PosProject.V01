@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-    <title>ดูแลและแก้ไขตารางราคา</title>
+    <title>ดูแลและแก้ไขตารางราคา - ลาบหนองบัวลำภู</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า ป้องกันการยืดหดของ viewport บนมือถือ */
+        /* ล็อกหน้าจอไม่ให้ขยายหรือเลื่อนทั้งหน้า */
         html, body { 
             height: 100%; 
             margin: 0; 
@@ -17,8 +17,6 @@
             background: #f3f4f6; 
             touch-action: pan-y; 
             -webkit-text-size-adjust: 100%;
-            -webkit-user-select: none;
-            user-select: none;
         }
 
         .app-layout {
@@ -31,6 +29,34 @@
             padding: 8px;
             overflow: hidden;
         }
+
+        /* ปรับความสูงกรอบตารางให้พอดีกับหน้าจอ ไม่ล้นและไม่หายไปด้านล่าง */
+        .category-card {
+            display: flex;
+            flex-direction: column;
+            height: 480px; /* คงความสูงไว้ที่ 470px ตามที่คุณต้องการ */
+            border: 2px solid #334155;
+            border-radius: 1rem;
+            overflow: hidden;
+            background: #ffffff;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* พื้นที่เลื่อนเฉพาะรายการอาหารด้านใน */
+        .card-body-scroll {
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* ล็อกหัวตารางสีฟ้าให้อยู่ด้านบนสุดของพื้นที่เลื่อนเสมอ */
+        .sticky-th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -40,7 +66,8 @@
             
             <!-- ส่วนหัวหลักด้านบนสุด (ล็อกนิ่ง) -->
             <div class="shrink-0 bg-white pb-2 relative z-20">
-                <h2 class="text-xl font-bold text-gray-800 text-center mb-4">ดูแลและแก้ไขตารางราคา</h2>
+                <!-- ปรับ mb-4 เป็น mb-2 เพื่อดึงช่องว่างด้านบนให้กรอบขยับขึ้น -->
+                <h2 class="text-xl font-bold text-gray-800 text-center mb-2">ดูแลและแก้ไขตารางราคา</h2>
                 
                 <div class="flex items-center gap-2 mb-2">
                     <!-- Custom Select Button -->
@@ -62,10 +89,11 @@
                 </div>
             </div>
 
-            <hr class="border-gray-100 my-2 shrink-0">
+            <!-- ปรับ my-2 เป็น my-1 เพื่อลดช่องว่างของเส้นคั่น -->
+            <hr class="border-gray-100 my-1 shrink-0">
 
-            <!-- ส่วนตารางหลัก (ให้สโครลเฉพาะพื้นที่ข้างในนี้) -->
-            <div id="tablesContainer" class="space-y-4 flex-1 flex flex-col pr-1 pb-2 overflow-y-auto relative z-0">
+            <!-- ส่วนตารางหลัก (ให้สโครลเฉพาะพื้นที่ข้างในกรอบ) -->
+            <div id="tablesContainer" class="space-y-4 flex-1 min-h-0 flex flex-col pr-1 pb-4 overflow-y-auto relative z-0">
                 <div class="text-center text-gray-400 text-xs py-4">กำลังโหลดข้อมูล...</div>
             </div>
         </div>
@@ -180,7 +208,7 @@
 
             let targetCategories = [];
             if (currentSelectedCategory === 'all') {
-                targetCategories = foodGroups; // แสดงทุกกลุ่มหมวดหมู่
+                targetCategories = foodGroups;
             } else {
                 targetCategories = foodGroups.filter(cat => String(cat.id) === String(currentSelectedCategory));
             }
@@ -191,7 +219,7 @@
             }
 
             const groupWidthPercent = groups.length > 0 ? Math.floor(55 / groups.length) : 20;
-            let groupHeaders = groups.map(g => `<th class="p-2.5 text-center" style="width: ${groupWidthPercent}%;">${cleanGroupName(g.name)}</th>`).join('');
+            let groupHeaders = groups.map(g => `<th class="p-2.5 text-center bg-blue-500 text-white font-bold" style="width: ${groupWidthPercent}%;">${cleanGroupName(g.name)}</th>`).join('');
 
             let allTablesHtml = '';
 
@@ -204,7 +232,7 @@
                         return nameA.localeCompare(nameB, 'th', { sensitivity: 'base', numeric: true });
                     });
 
-                if (catMenus.length === 0) return; // ข้ามหมวดหมู่ที่ไม่มีเมนู
+                if (catMenus.length === 0) return;
 
                 let rowsHtml = '';
                 catMenus.forEach((m, index) => {
@@ -234,15 +262,19 @@
                 });
 
                 allTablesHtml += `
-                    <div class="border-2 border-slate-700 rounded-2xl overflow-hidden shadow-sm bg-white mb-4 shrink-0">
-                        <div class="bg-slate-700 text-white font-bold py-2.5 px-4 text-xs flex items-center gap-1.5">
+                    <div class="category-card">
+                        <!-- หัวข้อหมวดหมู่ ล็อกนิ่งอยู่บนสุดของกรอบ ไม่ขยับตามการเลื่อน -->
+                        <div class="bg-slate-700 text-white font-bold py-2.5 px-4 text-xs flex items-center gap-1.5 shrink-0 z-20">
                             <span>📁</span> หมวดหมู่: ${currentCat.name}
                         </div>
-                        <div>
+                        
+                        <!-- พื้นที่เลื่อนเฉพาะรายการอาหารด้านใน -->
+                        <div class="card-body-scroll">
                             <table class="w-full text-xs border-collapse table-fixed">
                                 <thead>
-                                    <tr class="bg-blue-500 text-white font-bold">
-                                        <th class="p-2.5 text-left pl-3" style="width: 45%;">รายการอาหาร</th>
+                                    <!-- หัวตารางสีฟ้า ล็อกติดอยู่ด้านบนเวลากวาดนิ้วเลื่อน -->
+                                    <tr class="bg-blue-500 text-white font-bold sticky-th">
+                                        <th class="p-2.5 text-left pl-3 bg-blue-500" style="width: 45%;">รายการอาหาร</th>
                                         ${groupHeaders}
                                     </tr>
                                 </thead>

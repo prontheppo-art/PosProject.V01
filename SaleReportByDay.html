@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>รายงานออร์เดอร์รายวัน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="key.js"></script>
+    <script src="slender.js"></script> <!-- เพิ่มการเรียกใช้ไฟล์ปฏิทิน -->
+    <style>
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background: #f4f6f9; touch-action: pan-y; -webkit-text-size-adjust: 100%; -webkit-user-select: none; user-select: none; }
+        .app-container { max-width: 500px; margin: 0 auto; height: 100dvh; background: #fff; display: grid; grid-template-rows: auto auto 1fr; box-sizing: border-box; overflow: hidden; }
+    </style>
+</head>
+<body>
+
+<div class="app-container shadow-xl">
+    <div class="p-3 bg-white border-b flex justify-between items-center shrink-0">
+        <div>
+            <h1 class="font-bold text-xs text-slate-800">📊 รายงานออร์เดอร์รายวัน</h1>
+        </div>
+        <a href="index.html" class="text-xs bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg font-semibold hover:bg-slate-300">⬅️ กลับ</a>
+    </div>
+
+    <div class="p-3 bg-slate-50 border-b space-y-2 shrink-0">
+        <div class="flex items-center gap-2">
+            <label class="font-bold text-xs text-slate-700 shrink-0">📅 เลือกวันที่:</label>
+            <button type="button" onclick="CalendarSystem.open(currentSelectedDate)" id="btnSelectedDate" class="w-full border rounded-lg px-3 py-2 text-xs bg-white font-bold text-blue-600 shadow-sm text-left flex justify-between items-center">
+                <span id="txtSelectedDate">-- กำลังโหลด --</span>
+                <span>📅</span>
+            </button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+            <div class="bg-white p-2.5 rounded-lg border shadow-sm"><div class="text-[10px] text-slate-500">จำนวนบิลวันนี้</div><div class="text-sm font-bold text-slate-800" id="summaryCount">0 บิล</div></div>
+            <div class="bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 shadow-sm"><div class="text-[10px] text-emerald-700">ยอดขายรวมสุทธิ</div><div class="text-sm font-bold text-emerald-600" id="summaryTotal">0 บาท</div></div>
+        </div>
+    </div>
+
+    <div class="p-3 overflow-y-auto space-y-3 bg-slate-100" id="dailyOrdersContainer" style="-webkit-overflow-scrolling: touch;"></div>
+</div>
+
+<script>
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let allOrdersCache = [];
+    let currentSelectedDate = '';
+
+    window.onload = function() {
+        CalendarSystem.init((selectedDate) => {
+            currentSelectedDate = selectedDate;
+            document.getElementById('txtSelectedDate').textContent = selectedDate;
+            filterOrdersByDate();
+        });
+        fetchOrdersForReport();
+    };
+
+    async function fetchOrdersForReport() {
+        const { data } = await db.from('orders').select('*').order('id', { ascending: true });
+        allOrdersCache = data || [];
+        if (allOrdersCache.length > 0) {
+            currentSelectedDate = allOrdersCache[allOrdersCache.length - 1].order_date;
+        } else {
+            let t = new Date();
+            currentSelectedDate = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+        }
+        document.getElementById('txtSelectedDate').textContent = currentSelectedDate;
+        filterOrdersByDate();
+    }
+
+    function filterOrdersByDate() {
+        const container = document.getElementById('dailyOrdersContainer');
+        container.innerHTML = '';
+        let filtered = allOrdersCache.filter(o => o.order_date === currentSelectedDate);
+        
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="text-center text-xs text-slate-400 py-8">📭 ไม่พบออร์เดอร์ในวันที่ ${currentSelectedDate}</div>`;
+            document.getElementById('summaryCount').textContent = '0 บิล';
+            document.getElementById('summaryTotal').textContent = '0 บาท';
+            return;
+        }
+
+        let total = 0;
+        filtered.forEach((order, index) => {
+            let items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
+            let billTotal = items.reduce((sum, i) => sum + ((i.price || 0) * (i.qty || 1)), 0);
+            total += billTotal;
+            let itemsHtml = items.map(item => `<tr class="border-b"><td class="p-1.5 text-xs text-slate-800">${item.name}</td><td class="p-1.5 text-xs text-center">${item.qty}</td><td class="p-1.5 text-xs text-right font-bold text-blue-600">${((item.price || 0) * (item.qty || 1)).toLocaleString()}.-</td></tr>`).join('');
+            
+            container.innerHTML += `
+                <div class="bg-white border rounded-xl p-3 shadow-sm space-y-2">
+                    <div class="flex justify-between border-b pb-2"><span class="font-bold text-xs text-amber-900 bg-amber-100 px-2 py-0.5 rounded">📄 บิลที่ ${index + 1}</span><span class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">📍 ${(order.customer_group || 'ทั่วไป').split(' ')[0]}</span></div>
+                    <table class="w-full text-left"><tbody>${itemsHtml}</tbody></table>
+                    <div class="flex justify-between pt-1 text-xs font-bold"><span>ยอดรวม:</span><span class="text-emerald-600 text-sm">${billTotal.toLocaleString()} บาท</span></div>
+                </div>
+            `;
+        });
+        document.getElementById('summaryCount').textContent = `${filtered.length} บิล`;
+        document.getElementById('summaryTotal').textContent = `${total.toLocaleString()} บาท`;
+    }
+</script>
+</body>
+</html>

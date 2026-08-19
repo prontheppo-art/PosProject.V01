@@ -17,8 +17,6 @@
             background: #f3f4f6; /* bg-gray-100 */
             touch-action: pan-y; 
             -webkit-text-size-adjust: 100%;
-            -webkit-user-select: none;
-            user-select: none;
         }
 
         /* จัดโครงสร้างให้อยู่กึ่งกลางหน้าจอพอดีและไม่หลุดเฟรม */
@@ -78,7 +76,6 @@
         document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
         document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
 
-        // ป้องกันการดับเบิ้ลแทปเพื่อซูม (Double-tap to zoom) บนมือถือ
         let lastTouchEnd = 0;
         document.addEventListener('touchend', function (event) {
             const now = (new Date()).getTime();
@@ -88,7 +85,6 @@
             lastTouchEnd = now;
         }, { passive: false });
 
-        // ป้องกันการซูมด้วยการแตะ 2 นิ้วขึ้นไปพร้อมกัน
         document.addEventListener('touchstart', function (event) {
             if (event.touches.length > 1) {
                 event.preventDefault();
